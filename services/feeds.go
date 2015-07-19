@@ -73,7 +73,7 @@ func (fs *Feeds) GetAllJson(user User) ([]byte, error) {
 	return feedsJson, nil
 }
 
-func (fs *Feeds) Create(user User, feed Feed) (Feed, error) {
+func (fs *Feeds) Create(user User, feed *Feed) error {
 	feed.ID = newID()
 	feed.Link = fs.config.RootURL + "/feeds/" + string(feed.ID)
 	feed.ownerID = user.ID
@@ -82,13 +82,13 @@ func (fs *Feeds) Create(user User, feed Feed) (Feed, error) {
 		feed.ID, feed.ownerID, feed.Title, feed.Link, feed.Description)
 	if err != nil {
 		if isUniqueError(err) {
-			return Feed{}, ErrUniqueViolation
+			return ErrUniqueViolation
 		} else {
-			return Feed{}, fmt.Errorf("unable to create feed %#v: %v", feed, err)
+			return fmt.Errorf("unable to create feed %#v: %v", feed, err)
 		}
 	}
 
-	return feed, nil
+	return nil
 }
 
 func (fs *Feeds) Delete(user User, feedID RecordID) error {
@@ -107,7 +107,7 @@ func (fs *Feeds) Update(user User, feed Feed) error {
 	return checkRowsAffected(res, 1)
 }
 
-func (fs *Feeds) AddItem(user User, item FeedItem) (RecordID, error) {
+func (fs *Feeds) AddItem(user User, item *FeedItem) error {
 	item.ID = newID()
 	item.ownerID = user.ID
 
@@ -118,10 +118,10 @@ func (fs *Feeds) AddItem(user User, item FeedItem) (RecordID, error) {
   `
 	res, err := fs.db.Exec(q, item.ID, item.FeedID, item.ownerID, item.Link, item.Title, item.Description)
 	if err != nil {
-		return "", err
+		return err
 	}
-	return "", checkRowsAffected(res, 1)
-	return item.ID, nil
+	return checkRowsAffected(res, 1)
+	return nil
 }
 
 func (fs *Feeds) UpdateItem(user User, item FeedItem) error {

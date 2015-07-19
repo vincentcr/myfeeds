@@ -55,6 +55,20 @@ func routeUsers(m *Mux) {
 		jsonify(user, w)
 	})
 
+	m.Post("/users/tokens", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
+		user := c.MustGetUser()
+		token, err := c.Services.Users.CreateToken(user)
+		if err != nil {
+			panic(err)
+		}
+
+		res := map[string]string{
+			"token": string(token),
+		}
+		jsonify(res, w)
+
+	}))
+
 	m.Get("/users/me", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		user := c.MustGetUser()
 		jsonify(user, w)
@@ -96,17 +110,6 @@ func writeAs(w http.ResponseWriter, contentType string, bytes []byte) {
 
 }
 
-type FeedRequest struct {
-	Title       string `validate:"nonzero,min=1"`
-	Description string
-}
-
-type FeedItemRequest struct {
-	Link        string `validate:"nonzero,min=1"`
-	Title       string `validate:"nonzero,min=1"`
-	Description string
-}
-
 func routeFeeds(m *Mux) {
 	m.Get("/feeds", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		feeds, err := c.Services.Feeds.GetAllJson(c.MustGetUser())
@@ -135,12 +138,11 @@ func routeFeeds(m *Mux) {
 	}))
 
 	m.Post("/feeds", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
-		var feedReq FeedRequest
-		if err := parseAndValidate(r, &feedReq); err != nil {
+		var feed services.Feed
+		if err := parseFeedRequest(r, &feed); err != nil {
 			panic(err)
 		}
-		feed := services.Feed{Title: feedReq.Title, Description: feedReq.Description}
-		feed, err := c.Services.Feeds.Create(c.MustGetUser(), feed)
+		err := c.Services.Feeds.Create(c.MustGetUser(), &feed)
 		if err != nil {
 			panic(err)
 		}
@@ -148,12 +150,11 @@ func routeFeeds(m *Mux) {
 	}))
 
 	m.Put("/feeds/:feedID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
-		var feedReq FeedRequest
-		if err := parseAndValidate(r, &feedReq); err != nil {
+		feedID := services.RecordID(c.URLParams["feedID"])
+		feed := services.Feed{ID: feedID}
+		if err := parseFeedRequest(r, &feed); err != nil {
 			panic(err)
 		}
-		feedID := services.RecordID(c.URLParams["feedID"])
-		feed := services.Feed{ID: feedID, Title: feedReq.Title}
 		err := c.Services.Feeds.Update(c.MustGetUser(), feed)
 		if err != nil {
 			panic(err)
@@ -172,26 +173,23 @@ func routeFeeds(m *Mux) {
 
 	m.Post("/feeds/:feedID/items", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		feedID := services.RecordID(c.URLParams["feedID"])
-		var itemReq FeedItemRequest
-		if err := parseAndValidate(r, &itemReq); err != nil {
+		item := services.FeedItem{FeedID: feedID}
+		if err := parseFeedItemRequest(r, &item); err != nil {
 			panic(err)
 		}
-		item := services.FeedItem{FeedID: feedID, Link: itemReq.Link, Title: itemReq.Title, Description: itemReq.Description}
-		itemID, err := c.Services.Feeds.AddItem(c.MustGetUser(), item)
+		err := c.Services.Feeds.AddItem(c.MustGetUser(), &item)
 		if err != nil {
 			panic(err)
 		}
-		item.ID = itemID
 		jsonify(item, w)
 	}))
 
 	m.Put("/feeds/:feedID/items/:itemID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		itemID := services.RecordID(c.URLParams["itemID"])
-		var itemReq FeedItemRequest
-		if err := parseAndValidate(r, &itemReq); err != nil {
+		item := services.FeedItem{ID: itemID}
+		if err := parseFeedItemRequest(r, &item); err != nil {
 			panic(err)
 		}
-		item := services.FeedItem{ID: itemID, Link: itemReq.Link, Title: itemReq.Title, Description: itemReq.Description}
 		err := c.Services.Feeds.UpdateItem(c.MustGetUser(), item)
 		if err != nil {
 			panic(err)
@@ -207,5 +205,36 @@ func routeFeeds(m *Mux) {
 		}
 		w.WriteHeader(http.StatusNoContent)
 	}))
+}
 
+type FeedRequest struct {
+	Title       string `validate:"nonzero,min=1"`
+	Description string
+}
+
+func parseFeedRequest(r *http.Request, feed *services.Feed) error {
+	var feedReq FeedRequest
+	if err := parseAndValidate(r, &feedReq); err != nil {
+		return err
+	}
+	feed.Title = feedReq.Title
+	feed.Description = feedReq.Description
+	return nil
+}
+
+type FeedItemRequest struct {
+	Link        string `validate:"nonzero,min=1"`
+	Title       string `validate:"nonzero,min=1"`
+	Description string
+}
+
+func parseFeedItemRequest(r *http.Request, item *services.FeedItem) error {
+	var itemReq FeedItemRequest
+	if err := parseAndValidate(r, &itemReq); err != nil {
+		return err
+	}
+	item.Link = itemReq.Link
+	item.Title = itemReq.Title
+	item.Description = itemReq.Description
+	return nil
 }
