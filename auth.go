@@ -35,7 +35,6 @@ func authenticate(c *MyFeedsContext, w http.ResponseWriter, r *http.Request, nex
 
 	verify := func(method AuthMethod, creds AuthCreds) (services.User, error) {
 		switch method {
-		case AuthMethodNone:
 		case AuthMethodBasic:
 			username := creds[0]
 			password := creds[1]
