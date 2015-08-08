@@ -28,8 +28,15 @@ func setupServer(svc *services.Services) {
 }
 
 func setupMiddlewares(m *Mux) {
+	m.Use(cors)
 	m.Use(httpErrorRecovery)
 	m.Use(authenticate)
+}
+
+func cors(c *MyFeedsContext, w http.ResponseWriter, r *http.Request, next NextFunc) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Authorization,Accept,Content-Type")
+	next()
 }
 
 type UserRequest struct {
