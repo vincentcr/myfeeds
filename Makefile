@@ -11,7 +11,7 @@ PSQL_CMD ?= cd sql && psql -v ON_ERROR_STOP=1
 
 default: build
 
-dev: devdb build
+dev: build views
 	./$(APP_NAME) -bind :3000
 
 build: $(APP_NAME)
@@ -31,7 +31,6 @@ schema: $(SQL_SRC)
 .PHONY: schema
 views: $(SQL_SRC)
 	$(PSQL_CMD) -d $(DBNAME) -U $(DBUSER) -f ./views.sql
-
 
 devdata: $(SQL_SRC)
 	$(PSQL_CMD) -d $(DBNAME) -U $(DBUSER) -f ./dev.sql
