@@ -46,7 +46,7 @@ type UserRequest struct {
 
 func routeUsers(m *Mux) {
 
-	m.Post("/users", func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
+	m.Post("/api/v1/users", func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		var userReq UserRequest
 		if err := parseAndValidate(r, &userReq); err != nil {
 			panic(err)
@@ -59,24 +59,33 @@ func routeUsers(m *Mux) {
 			panic(err)
 		}
 
-		jsonify(user, w)
+		token, err := c.Services.Users.CreateToken(user)
+		if err != nil {
+			panic(err)
+		}
+
+		res := map[string]interface{}{
+			"user":  user,
+			"token": token,
+		}
+		jsonify(res, w)
 	})
 
-	m.Post("/users/tokens", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
+	m.Post("/api/v1/users/tokens", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		user := c.MustGetUser()
 		token, err := c.Services.Users.CreateToken(user)
 		if err != nil {
 			panic(err)
 		}
 
-		res := map[string]string{
-			"token": string(token),
+		res := map[string]interface{}{
+			"user":  user,
+			"token": token,
 		}
 		jsonify(res, w)
-
 	}))
 
-	m.Get("/users/me", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
+	m.Get("/api/v1/users/me", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		user := c.MustGetUser()
 		jsonify(user, w)
 	}))
@@ -118,7 +127,7 @@ func writeAs(w http.ResponseWriter, contentType string, bytes []byte) {
 }
 
 func routeFeeds(m *Mux) {
-	m.Get("/feeds", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
+	m.Get("/api/v1/feeds", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		feeds, err := c.Services.Feeds.GetAllJson(c.MustGetUser())
 		if err != nil {
 			panic(err)
@@ -126,7 +135,7 @@ func routeFeeds(m *Mux) {
 		writeAs(w, "application/json", feeds)
 	}))
 
-	m.Get("/feeds/:feedID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
+	m.Get("/api/v1/feeds/:feedID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		feedID := services.RecordID(c.URLParams["feedID"])
 		feed, err := c.Services.Feeds.GetJson(c.MustGetUser(), feedID)
 		if err != nil {
@@ -135,7 +144,7 @@ func routeFeeds(m *Mux) {
 		writeAs(w, "application/json", feed)
 	}))
 
-	m.Get("/feeds/:feedID/rss", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
+	m.Get("/api/v1/feeds/:feedID/rss", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		feedID := services.RecordID(c.URLParams["feedID"])
 		rss, err := c.Services.Feeds.GetRss(c.MustGetUser(), feedID)
 		if err != nil {
@@ -144,7 +153,7 @@ func routeFeeds(m *Mux) {
 		writeAs(w, "text/xml", rss)
 	}))
 
-	m.Post("/feeds", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
+	m.Post("/api/v1/feeds", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		var feed services.Feed
 		if err := parseFeedRequest(r, &feed); err != nil {
 			panic(err)
@@ -156,7 +165,7 @@ func routeFeeds(m *Mux) {
 		jsonify(feed, w)
 	}))
 
-	m.Put("/feeds/:feedID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
+	m.Put("/api/v1/feeds/:feedID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		feedID := services.RecordID(c.URLParams["feedID"])
 		feed := services.Feed{ID: feedID}
 		if err := parseFeedRequest(r, &feed); err != nil {
@@ -169,7 +178,7 @@ func routeFeeds(m *Mux) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 
-	m.Delete("/feeds/:feedID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
+	m.Delete("/api/v1/feeds/:feedID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		feedID := services.RecordID(c.URLParams["feedID"])
 		err := c.Services.Feeds.Delete(c.MustGetUser(), feedID)
 		if err != nil {
@@ -178,7 +187,7 @@ func routeFeeds(m *Mux) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 
-	m.Post("/feeds/:feedID/items", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
+	m.Post("/api/v1/feeds/:feedID/items", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		feedID := services.RecordID(c.URLParams["feedID"])
 		item := services.FeedItem{FeedID: feedID}
 		if err := parseFeedItemRequest(r, &item); err != nil {
@@ -191,7 +200,7 @@ func routeFeeds(m *Mux) {
 		jsonify(item, w)
 	}))
 
-	m.Put("/feeds/:feedID/items/:itemID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
+	m.Put("/api/v1/feeds/:feedID/items/:itemID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		itemID := services.RecordID(c.URLParams["itemID"])
 		item := services.FeedItem{ID: itemID}
 		if err := parseFeedItemRequest(r, &item); err != nil {
@@ -204,7 +213,7 @@ func routeFeeds(m *Mux) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 
-	m.Delete("/feeds/:feedID/items/:itemID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
+	m.Delete("/api/v1/feeds/:feedID/items/:itemID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		itemID := services.RecordID(c.URLParams["itemID"])
 		err := c.Services.Feeds.DeleteItem(c.MustGetUser(), itemID)
 		if err != nil {
