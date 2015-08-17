@@ -1,117 +1,103 @@
-'use strict';
-
-import Bluebird from 'bluebird';
-import _ from 'lodash';
 import Session from './session';
+import 'whatwg-fetch';
 
 const API_BASE_URL = 'http://localhost:3000/api/v1';
 const MIME_JSON = 'application/json';
-const REQUEST_DEFAULTS = Object.freeze({
-  method: 'GET',
-  headers: {
-    'accept': MIME_JSON,
-    'content-type': MIME_JSON,
-  },
+const DEFAULT_HEADERS = Object.freeze({
+  'accept': MIME_JSON,
+  'content-type': MIME_JSON,
 });
 
 export class Api {
 
-  post(req) {
-    req.method = 'POST';
-    return this.send(req);
+  get(url, opts) {
+    return this.send(url, {...opts, method: 'GET'});
   }
 
-  get(req) {
-    req.method = 'GET';
-    return this.send(req);
+  post(url, opts) {
+    return this.send(url, {...opts, method: 'POST'});
   }
 
-  put(req) {
-    req.method = 'PUT';
-    return this.send(req);
+  put(url, opts) {
+    return this.send(url, {...opts, method: 'PUT'});
   }
 
-  delete(req) {
-    req.method = 'DELETE';
-    return this.send(req);
+  delete(url, opts) {
+    return this.send(url, {...opts, method: 'DELETE'});
   }
 
-  send(req) {
-    this._authorize(req);
-    if (typeof req === 'string') {
-      req = { url: req };
+  send(url, opts) {
+    url = this._normalizeUrl(url);
+    this._completeHeaders(opts);
+    this._encodeBody(opts);
+    const res = this._exec(url, opts);
+    return res;
+  }
+
+  _normalizeUrl(url) {
+    if(!/^https?:/.test(url)) {
+      return API_BASE_URL + url;
+    } else {
+      return url;
     }
-
-    if(!/^https?:/.test(req.url)) {
-      req.url = API_BASE_URL + req.url;
-    }
-
-    return this._exec(req);
-    // .catch((err) => {
-    //   console.log(err, req);
-    // });
   }
 
-  _authorize(req) {
-    if (req.auth != null) {
-      this._authorizeWith(req, req.auth);
+  _completeHeaders(opts) {
+    if (opts.headers == null) {
+      opts.headers = {};
+    }
+    opts.headers = Object.assign({}, DEFAULT_HEADERS, opts.headers);
+    this._authorize(opts);
+  }
+
+  _authorize(opts) {
+    if (opts.auth != null) {
+      this._authorizeWith(opts, opts.auth);
     } else {
       const token = Session.get('token');
       if (token != null) {
-        this._authorizeWith(req, {scheme: 'token', creds: token});
+        this._authorizeWith(opts, {scheme: 'token', creds: token});
       }
     }
+
+    delete opts.auth;
   }
 
-  _authorizeWith(req, {scheme, creds}) {
-    if (req.headers == null) {
-      req.headers = {};
-    }
-    if (req.headers.authorization == null) {
+  _authorizeWith(opts, {scheme, creds}) {
+    if (opts.headers.authorization == null) {
       if (scheme === 'token') {
-        req.headers.authorization = `Token token="${creds}"`;
+        opts.headers.authorization = `Token token="${creds}"`;
       } else if (scheme === 'basic') {
         const encoded = btoa(creds.email + ':' + creds.password);
-        req.headers.authorization = `Basic ${encoded}`;
+        opts.headers.authorization = `Basic ${encoded}`;
       }
     }
   }
 
-  _exec(req) {
-    const promise = new Bluebird(function (resolve, reject) {
-      req = _.merge({}, REQUEST_DEFAULTS, req);
+  _encodeBody(opts) {
+    if (isJSON(opts.headers['content-type']) && typeof opts.data === 'object' && opts.body == null) {
+      opts.body = JSON.stringify(opts.data);
+      delete opts.data;
+    }
+  }
 
-      const xhr = new XMLHttpRequest();
-      xhr.open(req.method, req.url);
-
-      Object.keys(req.headers).forEach(function(name){
-        const val = req.headers[name];
-        xhr.setRequestHeader(name, val);
-      });
-
-      if (isJSON(req.headers['content-type']) && typeof req.data === 'object') {
-        req.data = JSON.stringify(req.data);
-      }
-
-      xhr.addEventListener('error', reject);
-      xhr.addEventListener('load', () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          let data;
-          if (isJSON(xhr.getResponseHeader('content-type'))) {
-            data = JSON.parse(xhr.responseText);
-          } else {
-            data = xhr.responseText;
-          }
-          resolve(data, xhr);
+  _exec(url, opts) {
+    return fetch(url, opts).then((res) => {
+        const status = res.status;
+        if (status >= 400) {
+          const err = Object.assign(new Error(`Unexpected status ${res.status}`), {res, status});
+          throw err;
         } else {
-          reject(xhr);
+          return res;
         }
+      })
+      .catch((err) => {
+        if (err.status === 401) {
+          Session.clear();
+        }
+        console.log('request failed', err, {url, opts});
+        throw err;
       });
-
-
-      xhr.send(req.data);
-    });
-    return promise;
   }
 }
 
@@ -132,31 +118,26 @@ function isJSON(contentType) {
 
 export const Users = Api.create({
   signup(creds) {
-    return this._api.post({
-      url: '/users',
+    return this._api.post('/users', {
       auth: {
         scheme: 'basic',
         creds: creds,
       },
     })
-    .then( (res) => Session.set(res) )
+    .then(res => res.json())
+    .then(userData => Session.set(userData))
     ;
   },
 
   signin(creds) {
-    return this._api.post({
-      url: '/users/tokens',
+    return this._api.post('/users/tokens', {
       auth: {
         scheme: 'basic',
         creds: creds,
       },
     })
-    .then( (res) => {
-      console.log('yyyyyy');
-      Session.set(res);
-      return res;
-    })
-    ;
+    .then(res => res.json())
+    .then(userData => Session.set(userData))
   },
 
   signout() {
@@ -166,7 +147,7 @@ export const Users = Api.create({
         Session.clear();
       });
     } else {
-      return Bluebird.reject(new Error('not signed in'));
+      return Promise.reject(new Error('not signed in'));
     }
   },
 
@@ -175,11 +156,11 @@ export const Users = Api.create({
 export const Feeds = Api.create({
 
   getAll() {
-    return this._api.get('/feeds');
+    return this._api.get('/feeds').then(res => res.json());
   },
 
   get(feedID) {
-    return this._api.get(`/feeds/${feedID}`);
+    return this._api.get(`/feeds/${feedID}`).then(res => res.json());
   },
 
   save(feed) {
@@ -192,7 +173,7 @@ export const Feeds = Api.create({
       url = `/feeds/${feed.id}`;
     }
 
-    return this._api.send({url: url, method: method, data: feed});
+    return this._api.send(url, {method, data: feed});
   },
 
   remove(feedID) {
@@ -201,9 +182,7 @@ export const Feeds = Api.create({
 
   addItem(feedID, item) {
     const url = `/feeds/${feedID}/items`;
-    return this._api.put({url: url, data: item});
+    return this._api.put(url, {data: item});
   },
 
 });
-
-
