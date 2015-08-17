@@ -1,31 +1,39 @@
-import * as constants from './constants';
+import { createStore, applyMiddleware, combineReducers } from 'redux';
+import thunkMiddleware from 'redux-thunk';
+import loggerMiddleware from 'redux-logger';
+import {
+  GET_FEEDS_BEGIN,
+  GET_FEEDS_INVALIDATE,
+  GET_FEEDS_COMPLETED,
+} from './actionTypes';
 
-const initialState = {
+const INITIAL_STATE = Object.freeze({
+  isFetching: false,
+  didInvalidate: true,
   feeds: [],
-};
+});
 
-const actionsMap = {
-  [constants.GET_FEEDS]: (state, action) => ({ feeds: action.feeds }),
-  // [constants.FETCH_REPO]: (state, action) => ({ repo: action.repo }),
-  // [constants.FETCH_USER_STARGAZERS]: (state, action) => (
-  //   {
-  //     stargazers: Object.assign({}, state.stargazers, {
-  //       user: action.stargazers,
-  //       pagination: action.pagination
-  //     })
-  //   }),
-  // [constants.FETCH_REPO_STARGAZERS]: (state, action) => (
-  //   {
-  //     stargazers: Object.assign({}, state.stargazers, {
-  //       repo: action.stargazers,
-  //       pagination: action.pagination
-  //     })
-  //   })
-};
+function feedList(state = INITIAL_STATE, action) {
+  console.log('store:feedList:', action.type, {state, action});
+  switch(action.type) {
+    case GET_FEEDS_INVALIDATE:
+      return {...state, didInvalidate:true};
+    case GET_FEEDS_BEGIN:
+      return {...state, isFetching:true};
+    case GET_FEEDS_COMPLETED:
+      return {...state, err:action.err, feeds:action.feeds, isFetching:false, didInvalidate:false};
+    default:
+      return state;
+  }
+}
 
-export default function stores (state = initialState, action) {
-  const reduceFn = actionsMap[action.type];
-  if (!reduceFn) { return state; }
+const rootReducer = combineReducers({feedList});
 
-  return Object.assign({}, state, reduceFn(state, action));
+const createStoreWithMiddleware = applyMiddleware(
+  thunkMiddleware,
+  loggerMiddleware
+)(createStore);
+
+export default function configureStore(initialState) {
+  return createStoreWithMiddleware(rootReducer, initialState);
 }

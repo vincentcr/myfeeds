@@ -1,4 +1,7 @@
-export const GET_FEEDS = 'GET_FEEDS';
+export const GET_FEEDS_BEGIN = 'GET_FEEDS_BEGIN';
+export const GET_FEEDS_INVALIDATE = 'GET_FEEDS_INVALIDATE';
+export const GET_FEEDS_COMPLETED = 'GET_FEEDS_COMPLETED';
+
 export const GET_FEED = 'GET_FEED';
 export const ADD_FEED = 'ADD_FEED';
 export const REMOVE_FEED = 'REMOVE_FEED';
