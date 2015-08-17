@@ -1,5 +1,3 @@
-'use strict';
-
 const STORAGE_ROOT = 'myfeeds.session.';
 
 export class Session {
@@ -28,21 +26,20 @@ export class Session {
   }
 
   remove(key) {
+    console.log(`session:delete:${key}`);
     delete this._data[key];
     delete localStorage[this._fqKey(key)];
   }
 
   clear() {
-    for (let [key] of Array.from(this)) {
+    console.log('session:clear');
+    for (let [key] of this) {
       this.remove(key);
     }
   }
 
-  *[Symbol.iterator]() {
-    for (let key of this._data) {
-      const val = this._data[key];
-      yield [key, val];
-    }
+  [Symbol.iterator]() {
+    return Object.entries(this._data)[Symbol.iterator]();
   }
 
   _fqKey(key) {
@@ -51,4 +48,3 @@ export class Session {
 }
 
 export default new Session();
-
