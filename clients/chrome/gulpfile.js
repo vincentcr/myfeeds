@@ -1,5 +1,6 @@
 var path = require('path');
 
+var gutil = require('gulp-util');
 var gulp = require('gulp');
 var sourcemaps = require('gulp-sourcemaps');
 var source = require('vinyl-source-stream');
@@ -22,7 +23,9 @@ function compile(watch) {
   }
 
   function rebundle() {
-    bundler.bundle()
+    var started = Date.now();
+    gutil.log('bundling... →');
+    return bundler.bundle()
       .on('error', errorHandler(bundler))
       .pipe(source(JS_OUT))
       .on('error', errorHandler(bundler))
@@ -34,17 +37,20 @@ function compile(watch) {
       .on('error', errorHandler(bundler))
       .pipe(gulp.dest(path.dirname(OUT_DIR)))
       .on('error', errorHandler(bundler))
+      .on('end', function(){
+        var elapsed = (Date.now() - started) / 1000;
+        gutil.log('→ rebundle completed in', elapsed.toFixed(2), 'seconds');
+      })
     ;
   }
 
   if (watch) {
     bundler.on('update', function() {
-      console.log('-> bundling...');
       rebundle();
     });
   }
 
-  rebundle();
+  return rebundle();
 }
 
 function errorHandler(stream) {
