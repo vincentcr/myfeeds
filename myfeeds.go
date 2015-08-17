@@ -36,6 +36,7 @@ func setupMiddlewares(m *Mux) {
 func cors(c *MyFeedsContext, w http.ResponseWriter, r *http.Request, next NextFunc) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "Authorization,Accept,Content-Type")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, HEAD")
 	next()
 }
 
