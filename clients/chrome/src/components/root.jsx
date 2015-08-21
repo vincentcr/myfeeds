@@ -1,36 +1,33 @@
-import React, { PropTypes } from 'react';
+import React from 'react';
 import { Redirect, Router, Route } from 'react-router';
-import HashHistory from 'react-router/lib/HashHistory';
+import History from 'react-router/lib/HashHistory';
 import { Provider } from 'react-redux';
 import configureStore from '../stores';
 import {App, Signin, FeedList, Feed} from '.';
+import Session from '../session';
+const ANONYMOUS_ROUTES = ['/signin', '/signup'];
 
 const store = configureStore();
 
 export default class Root extends React.Component {
 
   static create(rootNode) {
-    const history = new HashHistory();
-    React.render(<Root history={history} />, rootNode);
-  }
-
-  static propTypes = {
-    history: PropTypes.object.isRequired,
+    React.render(<Root />, rootNode);
   }
 
   render () {
-    const { history } = this.props;
     return (
       <Provider store={store}>
-        {() => Root.renderRoutes(history)}
+        {() => Root.renderApp()}
       </Provider>
     );
   }
 
-  static renderRoutes(history) {
+  static renderApp() {
+    const history = new History();
     return (
       <Router history={history}>
-        <Route component={App}>
+        <Route onEnter={this.checkAccess} component={App}>
           <Route name="signin" path="signin" component={Signin}/>
           <Route path="/feeds" component={FeedList}>
             <Route name="feed" path="/feeds/:feedID" component={Feed}/>
@@ -40,66 +37,23 @@ export default class Root extends React.Component {
       </Router>
     );
   }
+
+  static checkAccess(route, transition) {
+    const path = route.location.pathname.replace(/^(.+?)(\?.+)$/, '$1'); //remove query from path
+    const isAnonymousRoute = ANONYMOUS_ROUTES.indexOf(path) >= 0;
+    const isSignedIn = Session.get('user') != null;
+
+    let redirect;
+    if (!isSignedIn && !isAnonymousRoute) {
+      redirect = { path: ANONYMOUS_ROUTES[0], query: { next: transition.path }};
+    } else if (isSignedIn && isAnonymousRoute) {
+      redirect = { path: '/' };
+    }
+
+    console.log('checkAccess:', {transition, path, isAnonymousRoute, redirect});
+    if (redirect != null) {
+      transition.to(redirect.path, redirect.params, redirect.query);
+    }
+
+  }
 }
-
-
-
-// export default function init() {
-
-//   const routes = (
-//     <Route handler={components.App}>
-//       <Route name="signin" path="signin" handler={components.Signin}/>
-//       <Route path="feeds" component={components.Feeds}>
-//         <Route name="feed" path="/feeds/:feedID" component={components.Feed}/>
-//       </Route>
-//     </Route>
-//   );
-
-//   Router.run(routes, Router.HashLocation, (Root) => {
-//     React.render(<Root/>, document.body);
-//   });
-
-// }
-//
-// const dispatcher = createDispatcher(
-//   composeStores(stores)
-//   //getState => [ thunkMiddleware(getState), loggerMiddleware ]
-// );
-// const redux = createRedux(dispatcher);
-//
-//
-// export default class Root extends React.Component {
-//
-//   static create(rootNode) {
-//     const history = new HashHistory();
-//     React.render(<Root history={history} />, rootNode);
-//   }
-//
-//   render () {
-//     const { history } = this.props;
-//     return (
-//       <Provider redux={redux}>
-//         {renderRoutes.bind(null, history)}
-//       </Provider>
-//     );
-//   }
-// }
-//
-// Root.propTypes = {
-//   history: PropTypes.object.isRequired,
-// };
-//
-//
-// function renderRoutes (history) {
-//   return (
-//     <Router history={history}>
-//       <Route component={components.App}>
-//         <Route name="signin" path="signin" component={components.Signin}/>
-//         <Route path="/feeds" component={components.Feeds}>
-//           <Route name="feed" path="/feeds/:feedID" component={components.Feed}/>
-//         </Route>
-//       </Route>
-//       <Redirect from="/" to="/feeds" />
-//     </Router>
-//   );
-// }
