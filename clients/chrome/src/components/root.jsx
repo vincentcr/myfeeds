@@ -3,10 +3,14 @@ import { Redirect, Router, Route } from 'react-router';
 import History from 'react-router/lib/HashHistory';
 import { Provider } from 'react-redux';
 import configureStore from '../stores';
-import {App, Signin, FeedList, Feed} from '.';
-import Session from '../session';
-const ANONYMOUS_ROUTES = ['/signin', '/signup'];
 
+import Session from '../session';
+import App from './app.jsx';
+import Signin from './signin.jsx';
+import FeedList from './feeds.jsx';
+import Feed from './feed.jsx';
+
+const ANONYMOUS_ROUTES = ['/signin', '/signup'];
 const store = configureStore();
 
 export default class Root extends React.Component {

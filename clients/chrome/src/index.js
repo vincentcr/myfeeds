@@ -1,5 +1,5 @@
 import 'babel/polyfill';
-import {Root} from './components';
+import Root from './components/root.jsx';
 
 document.addEventListener('DOMContentLoaded', () => Root.create(document.body));
 
