@@ -1,6 +1,7 @@
 package services
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
 
@@ -78,7 +79,13 @@ func (fs *Feeds) Create(user User, feed *Feed) error {
 	feed.Link = fs.config.RootURL + "/feeds/" + string(feed.ID)
 	feed.ownerID = user.ID
 
-	_, err := fs.db.Exec("INSERT INTO feeds(id,owner_id,title,link,description) VALUES($1,$2,$3,$4,$5)",
+	tx, err := fs.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Exec("INSERT INTO feeds(id,owner_id,title,link,description) VALUES($1,$2,$3,$4,$5)",
 		feed.ID, feed.ownerID, feed.Title, feed.Link, feed.Description)
 	if err != nil {
 		if isUniqueError(err) {
@@ -88,7 +95,12 @@ func (fs *Feeds) Create(user User, feed *Feed) error {
 		}
 	}
 
-	return nil
+	err = fs.addItems(user, feed.ID, feed.Items, tx)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (fs *Feeds) Delete(user User, feedID RecordID) error {
@@ -100,28 +112,79 @@ func (fs *Feeds) Delete(user User, feedID RecordID) error {
 }
 
 func (fs *Feeds) Update(user User, feed Feed) error {
-	res, err := fs.db.Exec("UPDATE feeds set NAME=$1 WHERE id=$1 AND owner_id=$3", feed.Title, feed.ID, user.ID)
+
+	tx, err := fs.db.Begin()
 	if err != nil {
 		return err
 	}
-	return checkRowsAffected(res, 1)
+	defer tx.Rollback()
+
+	res, err := tx.Exec("UPDATE feeds set title=$1 WHERE id=$2 AND owner_id=$3", feed.Title, feed.ID, user.ID)
+	if err != nil {
+		return err
+	}
+	err = checkRowsAffected(res, 1)
+	if err != nil {
+		return err
+	}
+
+	err = fs.replaceItems(user, feed.ID, feed.Items, tx)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (fs *Feeds) replaceItems(user User, feedID RecordID, items []FeedItem, tx *sql.Tx) error {
+	_, err := tx.Exec("DELETE FROM feed_items WHERE feed_id = $1 AND owner_id = $2", feedID, user.ID)
+	if err != nil {
+		return err
+	}
+
+	return fs.addItems(user, feedID, items, tx)
+}
+
+func (fs *Feeds) addItems(user User, feedID RecordID, items []FeedItem, tx *sql.Tx) error {
+
+	query := bytes.Buffer{}
+
+	// build query to insert items. we used the owner_id constraint to ensure that we can't add items to feeds
+	// of another user.
+	query.WriteString(`
+		WITH owned_feed AS (SELECT owner_id FROM feeds WHERE id = $1 AND owner_id = $2)
+		INSERT INTO feed_items(id, feed_id, owner_id, link, title, description) VALUES
+	`)
+	params := []interface{}{feedID, user.ID}
+	itemCount := len(items)
+	for idx, item := range items {
+		item.ID = newID()
+		item.ownerID = user.ID
+		nextParam := len(params) + 1
+		fmt.Fprintf(&query, "($%d, $%d, (SELECT owner_id FROM owned_feed), $%d, $%d, $%d)",
+			nextParam, nextParam+1, nextParam+2, nextParam+3, nextParam+4)
+		params = append(params, item.ID, feedID, item.Link, item.Title, item.Description)
+		if idx < itemCount-1 {
+			query.WriteString(",\n")
+		}
+	}
+	res, err := tx.Exec(query.String(), params...)
+	if err != nil {
+		return err
+	}
+	return checkRowsAffected(res, int64(itemCount))
 }
 
 func (fs *Feeds) AddItem(user User, item *FeedItem) error {
-	item.ID = newID()
-	item.ownerID = user.ID
-
-	//the select ensures that the feed item owner is the same as the feed owner
-	q := `
-    INSERT INTO feed_items(id, feed_id, owner_id, link,title,description) VALUES(
-      $1, $2, (SELECT owner_id FROM feeds WHERE id = $2 AND owner_id = $3), $4, $5)
-  `
-	res, err := fs.db.Exec(q, item.ID, item.FeedID, item.ownerID, item.Link, item.Title, item.Description)
+	tx, err := fs.db.Begin()
 	if err != nil {
 		return err
 	}
-	return checkRowsAffected(res, 1)
-	return nil
+	defer tx.Rollback()
+
+	err = fs.addItems(user, item.FeedID, []FeedItem{*item}, tx)
+
+	return tx.Commit()
 }
 
 func (fs *Feeds) UpdateItem(user User, item FeedItem) error {

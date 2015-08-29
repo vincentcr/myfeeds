@@ -211,7 +211,7 @@ func routeFeeds(m *Mux) {
 		if err != nil {
 			panic(err)
 		}
-		w.WriteHeader(http.StatusNoContent)
+		jsonify(item, w)
 	}))
 
 	m.Delete("/api/v1/feeds/:feedID/items/:itemID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
@@ -227,6 +227,7 @@ func routeFeeds(m *Mux) {
 type FeedRequest struct {
 	Title       string `validate:"nonzero,min=1"`
 	Description string
+	Items       []FeedItemRequest
 }
 
 func parseFeedRequest(r *http.Request, feed *services.Feed) error {
@@ -236,6 +237,12 @@ func parseFeedRequest(r *http.Request, feed *services.Feed) error {
 	}
 	feed.Title = feedReq.Title
 	feed.Description = feedReq.Description
+	feed.Items = make([]services.FeedItem, 0, len(feedReq.Items))
+	for _, itemReq := range feedReq.Items {
+		var item services.FeedItem
+		copyFeedItemFromRequest(itemReq, &item)
+		feed.Items = append(feed.Items, item)
+	}
 	return nil
 }
 
@@ -250,8 +257,12 @@ func parseFeedItemRequest(r *http.Request, item *services.FeedItem) error {
 	if err := parseAndValidate(r, &itemReq); err != nil {
 		return err
 	}
+	copyFeedItemFromRequest(itemReq, item)
+	return nil
+}
+
+func copyFeedItemFromRequest(itemReq FeedItemRequest, item *services.FeedItem) {
 	item.Link = itemReq.Link
 	item.Title = itemReq.Title
 	item.Description = itemReq.Description
-	return nil
 }
