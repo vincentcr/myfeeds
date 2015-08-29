@@ -138,6 +138,7 @@ export const Users = Api.create({
     })
     .then(res => res.json())
     .then(userData => Session.set(userData))
+    ;
   },
 
   signout() {
@@ -173,7 +174,12 @@ export const Feeds = Api.create({
       url = `/feeds/${feed.id}`;
     }
 
-    return this._api.send(url, {method, data: feed});
+    return this._api
+      .send(url, {method, data: feed})
+      .then((savedFeed) => {
+        return savedFeed || feed;
+      })
+    ;
   },
 
   remove(feedID) {
