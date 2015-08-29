@@ -32,12 +32,11 @@ export default class Root extends React.Component {
     return (
       <Router history={history}>
         <Route onEnter={this.checkAccess} component={App}>
-          <Route name="signin" path="signin" component={Signin}/>
-          <Route path="/feeds" component={FeedList}>
-            <Route name="feed" path="/feeds/:feedID" component={Feed}/>
-          </Route>
+          <Route path='/signin' name='signin' component={Signin}/>
+          <Route path='/feeds' name='feeds' component={FeedList} />
+          <Route path='/feeds/:feedID' name='feed' component={Feed}/>
         </Route>
-        <Redirect from="/" to="/feeds" />
+        <Redirect from='/' to='/feeds' />
       </Router>
     );
   }
