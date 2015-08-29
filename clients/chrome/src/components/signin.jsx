@@ -12,7 +12,7 @@ export default class Signin extends React.Component {
   }
 
   static contextTypes = {
-    router: PropTypes.func.isRequired,
+    router: PropTypes.object.isRequired,
   }
 
   handleSubmit(e) {

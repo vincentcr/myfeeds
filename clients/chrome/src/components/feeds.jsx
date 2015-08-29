@@ -4,47 +4,56 @@ import { connect } from 'react-redux';
 import { fetchFeedsIfNeeded } from '../actions';
 
 @connect(state => state.feedList)
-export class FeedList extends React.Component {
-  constructor(props) {
-    super(props);
-  }
+export default class FeedList extends React.Component {
 
   static propTypes = {
     children: PropTypes.any,
     dispatch: PropTypes.func.isRequired,
   }
 
+  static contextTypes = {
+    router: PropTypes.object.isRequired,
+  }
+
   componentDidMount() {
+    console.log('feed list, component did mount');
     const { dispatch } = this.props;
     dispatch(fetchFeedsIfNeeded());
   }
 
+  handleAddNew() {
+    this.context.router.redirect('/feeds/new');
+  }
+
   render() {
     const { feeds, isFetching, children, err } = this.props;
+    const feedCount = Object.keys(feeds).length;
 
     return (
       <div className="feeds">
-        {isFetching && feeds.length === 0 &&
+        {isFetching && feedCount === 0 &&
           <div className='loading'>Loading...</div>
         }
-        {!isFetching && feeds.length === 0 &&
+        {!isFetching && feedCount === 0 &&
           <div className='emtpy'>Empty.</div>
         }
-        {feeds.length > 0 &&
+        {feedCount > 0 &&
           <div style={{ opacity: isFetching ? 0.5 : 1 }}>
             <Feeds {...this.props} />
           </div>
         }
 
-        { //this will render the child routes
-          children && React.cloneElement(children, {...this.props })
-        }
+        <div>
+          <button onClick={this.handleAddNew}>add new feed</button>
+        </div>
 
         {err &&
           <span className='error'>
             {err.message || err.toString()}
           </span>
         }
+
+        {children}
       </div>
     );
   }
@@ -57,12 +66,12 @@ class Feeds extends React.Component {
   }
 
   static propTypes = {
-    feeds: PropTypes.array,
+    feeds: PropTypes.object,
   }
 
   render() {
     const {feeds} = this.props;
-    const feedNodes = feeds.map(feed => this.renderFeed(feed));
+    const feedNodes = Object.values(feeds).map(feed => this.renderFeed(feed));
     return (
       <ul className='feed-list'>
         {feedNodes}
@@ -73,40 +82,11 @@ class Feeds extends React.Component {
   renderFeed(feed) {
     return (
       <li key={feed.id}>
-        <Link className='feed-link' to='feed' params={{feedID: feed.id}}>
+        <Link className='feed-link' to={`/feeds/${feed.id}`}>
           {feed.title}
         </Link>
         ({feed.items.length} items)
       </li>
-    );
-  }
-}
-
-export class Feed extends React.Component {
-  render() {
-    return (
-      <div className='feed'>
-        <h2 className='title'> {this.props.title} </h2>
-        <FeedItemList items={this.props.items} />
-      </div>
-    );
-  }
-}
-
-class FeedItemList extends React.Component {
-  render() {
-    const itemNodes = this.props.items.map( (item) => {
-      return (
-        <li key={item.id}>
-          <a href='{item.link}'>{item.title}</a>
-        </li>
-      );
-    });
-
-    return (
-      <ul className='items'>
-        {itemNodes}
-      </ul>
     );
   }
 }
