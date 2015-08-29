@@ -11,16 +11,13 @@ PSQL_CMD ?= cd sql && psql -v ON_ERROR_STOP=1
 
 default: build
 
-dev: build views clearcache
+dev: build views
 	./$(APP_NAME) -bind :3000
 
 build: $(APP_NAME)
 
 $(APP_NAME): $(GO_SRC)
 	godep go build .
-
-clearcache:
-	redis-cli flushall
 
 devdb:
 	$(MAKE) recreatedb
@@ -42,9 +39,12 @@ recreatedb:
 	$(MAKE) dropdb || true
 	$(MAKE) createdb
 
-dropdb:
+dropdb: clearcache
 	dropdb $(DBNAME)
 	dropuser $(DBUSER)
+
+clearcache:
+	redis-cli flushall
 
 createdb:
 	$(PSQL_CMD) --set=dbuser=$(DBUSER) --set=dbpasswd=$(DBPASSWD) --set=dbname=$(DBNAME) -f ./db.sql
