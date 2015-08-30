@@ -149,7 +149,7 @@ func (fs *Feeds) addItems(user User, feedID RecordID, items []FeedItem, tx *sql.
 
 	query := bytes.Buffer{}
 
-	// build query to insert items. we used the owner_id constraint to ensure that we can't add items to feeds
+	// build query to insert items. we use the owner_id constraint to ensure that we can't add items to feeds
 	// of another user.
 	query.WriteString(`
 		WITH owned_feed AS (SELECT owner_id FROM feeds WHERE id = $1 AND owner_id = $2)
@@ -158,7 +158,10 @@ func (fs *Feeds) addItems(user User, feedID RecordID, items []FeedItem, tx *sql.
 	params := []interface{}{feedID, user.ID}
 	itemCount := len(items)
 	for idx, item := range items {
-		item.ID = newID()
+		if item.ID == "" {
+			item.ID = newID()
+		}
+		item.FeedID = feedID
 		item.ownerID = user.ID
 		nextParam := len(params) + 1
 		fmt.Fprintf(&query, "($%d, $%d, (SELECT owner_id FROM owned_feed), $%d, $%d, $%d)",
