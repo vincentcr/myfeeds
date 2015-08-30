@@ -176,7 +176,7 @@ func routeFeeds(m *Mux) {
 		if err != nil {
 			panic(err)
 		}
-		w.WriteHeader(http.StatusNoContent)
+		jsonify(feed, w)
 	}))
 
 	m.Delete("/api/v1/feeds/:feedID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
