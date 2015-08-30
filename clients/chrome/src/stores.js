@@ -61,7 +61,7 @@ function feed(state = INITIAL_STATE.feed, action) {
     case FEED_EDIT_BEGIN:
       return {...state, isEditing:true};
     case FEED_EDIT_COMPLETE:
-      return {...state, isEditing:false};
+      return {...state, isEditing:false, currentFeed:action.feed};
     case FEED_SAVE_BEGIN:
       return {...state, isSaving:true};
     case FEED_SAVE_COMPLETE:
