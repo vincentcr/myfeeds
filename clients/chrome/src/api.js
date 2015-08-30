@@ -176,6 +176,7 @@ export const Feeds = Api.create({
 
     return this._api
       .send(url, {method, data: feed})
+      .then(res => res.json())
       .then((savedFeed) => {
         return savedFeed || feed;
       })
