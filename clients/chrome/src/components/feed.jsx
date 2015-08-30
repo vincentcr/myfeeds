@@ -11,10 +11,6 @@ export default class Feed extends React.Component {
     dispatch: PropTypes.func.isRequired,
   }
 
-  getInitialState() {
-    return {};
-  }
-
   componentDidMount() {
     const feedID = this.props.params.feedID;
     this.props.dispatch(fetchCurrentFeedIfNeeded(feedID));
