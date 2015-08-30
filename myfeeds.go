@@ -247,6 +247,7 @@ func parseFeedRequest(r *http.Request, feed *services.Feed) error {
 }
 
 type FeedItemRequest struct {
+	ID          string
 	Link        string `validate:"nonzero,min=1"`
 	Title       string `validate:"nonzero,min=1"`
 	Description string
@@ -262,6 +263,7 @@ func parseFeedItemRequest(r *http.Request, item *services.FeedItem) error {
 }
 
 func copyFeedItemFromRequest(itemReq FeedItemRequest, item *services.FeedItem) {
+	item.ID = services.RecordID(itemReq.ID)
 	item.Link = itemReq.Link
 	item.Title = itemReq.Title
 	item.Description = itemReq.Description
