@@ -1,6 +1,6 @@
 import React from 'react';
 import { Redirect, Router, Route } from 'react-router';
-import History from 'react-router/lib/HashHistory';
+import history from '../history';
 import { Provider } from 'react-redux';
 import configureStore from '../stores';
 
@@ -28,34 +28,33 @@ export default class Root extends React.Component {
   }
 
   static renderApp() {
-    const history = new History();
     return (
       <Router history={history}>
-        <Route onEnter={this.checkAccess} component={App}>
-          <Route path='/signin' name='signin' component={Signin}/>
-          <Route path='/feeds' name='feeds' component={FeedList} />
-          <Route path='/feeds/:feedID' name='feed' component={Feed}/>
+        <Route component={App}>
+          <Route path='/signin' name='signin' onEnter={this.checkAccess} component={Signin}/>
+          <Route path='/feeds' name='feeds'  onEnter={this.checkAccess}component={FeedList} />
+          <Route path='/feeds/:feedID' name='feed' onEnter={this.checkAccess} component={Feed}/>
         </Route>
         <Redirect from='/' to='/feeds' />
       </Router>
     );
   }
 
-  static checkAccess(route, transition) {
-    const path = route.location.pathname.replace(/^(.+?)(\?.+)$/, '$1'); //remove query from path
+  static checkAccess(nextState, replaceState) {
+    const path = nextState.location.pathname.replace(/^(.+?)(\?.+)$/, '$1'); //remove query from path
     const isAnonymousRoute = ANONYMOUS_ROUTES.indexOf(path) >= 0;
-    const isSignedIn = Session.get('user') != null;
+    const isSignedIn = Session.isSignedIn();
 
     let redirect;
     if (!isSignedIn && !isAnonymousRoute) {
-      redirect = { path: ANONYMOUS_ROUTES[0], query: { next: transition.path }};
+      redirect = { path: ANONYMOUS_ROUTES[0], query: { next: path }};
     } else if (isSignedIn && isAnonymousRoute) {
       redirect = { path: '/' };
     }
 
-    console.log('checkAccess:', {transition, path, isAnonymousRoute, redirect});
+    console.log('onEnter:checkAccess:', { path, isSignedIn, isAnonymousRoute, redirect });
     if (redirect != null) {
-      transition.to(redirect.path, redirect.params, redirect.query);
+      replaceState(redirect.query, redirect.path);
     }
 
   }

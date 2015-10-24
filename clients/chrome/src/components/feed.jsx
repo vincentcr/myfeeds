@@ -6,6 +6,11 @@ import classNames from 'classnames';
 @connect(state => state.feed)
 export default class Feed extends React.Component {
 
+constructor() {
+ super();
+ this.state = {  };
+}
+
   static propTypes = {
     children: PropTypes.any,
     dispatch: PropTypes.func.isRequired,

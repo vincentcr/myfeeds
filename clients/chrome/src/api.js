@@ -93,7 +93,10 @@ export class Api {
       })
       .catch((err) => {
         if (err.status === 401) {
-          Session.clear();
+          if (Session.isSignedIn()) {
+            console.log('invalid token, signout');
+            Session.signout();
+          }
         }
         console.log('request failed', err, {url, opts});
         throw err;
@@ -176,10 +179,6 @@ export const Feeds = Api.create({
 
     return this._api
       .send(url, {method, data: feed})
-      .then(res => {
-        console.log(res)
-        return res
-      })
       .then(res => res.json())
       .then((savedFeed) => {
         return savedFeed || feed;

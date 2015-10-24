@@ -1,5 +1,6 @@
-import React, {PropTypes} from 'react';
+import React from 'react';
 import {Users} from '../api';
+import history from '../history';
 
 const SUCCESS_REDIRECT_PATH = '/';
 
@@ -11,20 +12,18 @@ export default class Signin extends React.Component {
     };
   }
 
-  static contextTypes = {
-    router: PropTypes.object.isRequired,
-  }
-
   handleSubmit(e) {
     e.preventDefault();
 
     const email = React.findDOMNode(this.refs.email).value.trim();
     const password = React.findDOMNode(this.refs.password).value.trim();
-    const method = document.activeElement.name;
+    const method = document.activeElement.name || 'signin';
 
     Users[method]({email, password}).then(() => {
-      this.context.router.transitionTo(SUCCESS_REDIRECT_PATH);
-    }).catch((err) => {
+      const {location} = this.props;
+      const redirectPath = (location.state && location.state.next) ? location.state.next : SUCCESS_REDIRECT_PATH;
+      history.replaceState(null, redirectPath);
+    }).catch  ((err) => {
       console.log('error', err);
       this.setState({error: err.toString()});
     });

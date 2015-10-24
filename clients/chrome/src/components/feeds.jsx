@@ -12,7 +12,7 @@ export default class FeedList extends React.Component {
   }
 
   static contextTypes = {
-    router: PropTypes.object.isRequired,
+    history: PropTypes.object.isRequired,
   }
 
   componentDidMount() {
@@ -22,7 +22,7 @@ export default class FeedList extends React.Component {
   }
 
   handleAddNew() {
-    this.context.router.redirect('/feeds/new');
+    this.context.history.replaceState(null, '/feeds/new');
   }
 
   render() {
@@ -44,7 +44,7 @@ export default class FeedList extends React.Component {
         }
 
         <div>
-          <button onClick={this.handleAddNew}>add new feed</button>
+          <button onClick={this.handleAddNew.bind(this)}>add new feed</button>
         </div>
 
         {err &&
