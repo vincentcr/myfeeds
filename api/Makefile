@@ -1,53 +1,52 @@
+APP_NAME  = myfeeds
+ENV      ?= dev
+DBNAME   ?= $(APP_NAME)_$(ENV)
+DBUSER   ?= $(APP_NAME)_$(ENV)
+DBPASSWD ?= $(APP_NAME)_$(ENV)_secret
 
-APP_NAME=myfeeds
-
-GO_SRC=$(shell find . -type f -name '*.go')
-SQL_SRC=$(shell find sql -type f)
-
-DBNAME    = $(APP_NAME)test
-DBUSER    = $(APP_NAME)test
-DBPASSWD  = $(APP_NAME)testsecret
-PSQL_CMD ?= cd sql && psql -v ON_ERROR_STOP=1
+PSQL_CMD = cd sql && psql -v ON_ERROR_STOP=1
+GO_SRC   = $(shell find . -type f -name '*.go')
+SQL_SRC  = $(shell find sql -type f)
 
 default: build
 
-dev: build views
-	./$(APP_NAME) -bind :3000
-
 build: $(APP_NAME)
-
 $(APP_NAME): $(GO_SRC)
 	godep go build -o $(APP_NAME) .
 
-devdb:
-	$(MAKE) recreatedb
-	$(MAKE) schema
-	$(MAKE) devdata
+dev: build db-views
+	./$(APP_NAME) -bind :3000
 
-.PHONY: schema
-schema: $(SQL_SRC)
+db-dev:
+	$(MAKE) db-recreate
+	$(MAKE) db-dev-data
+
+.PHONY: db-schema
+db-schema: $(SQL_SRC)
 	$(PSQL_CMD) -d $(DBNAME) -U $(DBUSER) -f ./schema.sql
+	$(MAKE) db-views
 
-.PHONY: schema
-views: $(SQL_SRC)
+.PHONY: db-schema
+db-views: $(SQL_SRC)
 	$(PSQL_CMD) -d $(DBNAME) -U $(DBUSER) -f ./views.sql
 
-devdata: $(SQL_SRC)
+db-dev-data: $(SQL_SRC)
 	$(PSQL_CMD) -d $(DBNAME) -U $(DBUSER) -f ./dev.sql
 
-recreatedb:
-	$(MAKE) dropdb || true
-	$(MAKE) createdb
+db-recreate:
+	$(MAKE) db-drop || true
+	$(MAKE) db-create
 
-dropdb: clearcache
+db-drop: redis-flush
 	dropdb $(DBNAME)
 	dropuser $(DBUSER)
 
-clearcache:
+redis-flush:
 	redis-cli flushall
 
-createdb:
+db-create:
 	$(PSQL_CMD) --set=dbuser=$(DBUSER) --set=dbpasswd=$(DBPASSWD) --set=dbname=$(DBNAME) -f ./db.sql
+	$(MAKE) db-schema
 
 clean:
 	rm -f $(APP_NAME)

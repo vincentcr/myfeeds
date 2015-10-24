@@ -50,7 +50,7 @@ func New() (*Services, error) {
 }
 
 func setupDB(config Config) (*sql.DB, error) {
-	connParams := "dbname=myfeedstest user=myfeedstest password=myfeedstestsecret sslmode=disable"
+	connParams := "dbname=myfeeds_dev user=myfeeds_dev password=myfeeds_dev_secret sslmode=disable"
 	db, err := sql.Open("postgres", connParams)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create db driver with params %v: %v", connParams, err)
