@@ -139,10 +139,11 @@ class FeedItemList extends React.Component {
   render() {
     const itemNodes = this.props.items.map((item, idx) => React.createElement(FeedItem, {
         item,
-        key: item.key || item.id,
+        key: item.id,
         isEditing: this.props.isEditing,
         ref: `item_${idx}`,
     }));
+    console.log('---- nodes', itemNodes, 'keys', itemNodes.map(n => n.key));
     return (
       <ul className='items'>
         {itemNodes}

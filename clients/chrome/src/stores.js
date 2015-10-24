@@ -67,9 +67,9 @@ function feed(state = INITIAL_STATE.feed, action) {
     case FEED_SAVE_COMPLETE:
       return {...state, err:action.err, isSaving:false};
     case FEED_ADD_ITEM:
-      const items = state.feed.items.concat(action.item);
-      const feed = {...state.feed, items};
-      return {...state, feed};
+      const items = state.currentFeed.items.concat(action.item);
+      const currentFeed = {...state.currentFeed, items};
+      return {...state, currentFeed};
     default:
       return state;
   }

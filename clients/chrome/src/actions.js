@@ -82,6 +82,7 @@ export function saveFeed(feed) {
     dispatch(beginSavingFeed(feed));
     return Feeds.save(feed)
       .then((savedFeed) => {
+        console.log('savedFeed:', savedFeed);
         dispatch(updateFeeds(savedFeed));
         dispatch(completeEditFeed(savedFeed));
         return {};
