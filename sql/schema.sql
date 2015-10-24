@@ -3,7 +3,7 @@
 
 CREATE TABLE users(
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  email TEXT NOT NULL CHECK(email ~ '^[a-zA-Z0-9_%+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9][a-zA-Z0-9]+$'),
+  email TEXT NOT NULL UNIQUE CHECK(email ~ '^[a-zA-Z0-9_%+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9][a-zA-Z0-9]+$'),
   password VARCHAR(128) NOT NULL
 );
 
