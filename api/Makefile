@@ -17,7 +17,7 @@ dev: build views
 build: $(APP_NAME)
 
 $(APP_NAME): $(GO_SRC)
-	godep go build .
+	godep go build -o $(APP_NAME) .
 
 devdb:
 	$(MAKE) recreatedb

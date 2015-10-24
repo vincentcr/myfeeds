@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/vincentcr/myfeeds/services"
+	"github.com/vincentcr/myfeeds/api/services"
 )
 
 func mustAuthenticate(h handler) handler {

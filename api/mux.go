@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/vincentcr/myfeeds/services"
+	"github.com/vincentcr/myfeeds/api/services"
 	"github.com/zenazn/goji"
 	"github.com/zenazn/goji/web"
 )

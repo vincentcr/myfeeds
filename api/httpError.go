@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/vincentcr/myfeeds/services"
+	"github.com/vincentcr/myfeeds/api/services"
 )
 
 type HttpError struct {

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/vincentcr/myfeeds/services"
+	"github.com/vincentcr/myfeeds/api/services"
 	"gopkg.in/validator.v2"
 )
 
