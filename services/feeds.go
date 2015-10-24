@@ -111,7 +111,7 @@ func (fs *Feeds) Delete(user User, feedID RecordID) error {
 	return checkRowsAffected(res, 1)
 }
 
-func (fs *Feeds) Update(user User, feed Feed) error {
+func (fs *Feeds) Update(user User, feed *Feed) error {
 
 	tx, err := fs.db.Begin()
 	if err != nil {
@@ -146,29 +146,37 @@ func (fs *Feeds) replaceItems(user User, feedID RecordID, items []FeedItem, tx *
 }
 
 func (fs *Feeds) addItems(user User, feedID RecordID, items []FeedItem, tx *sql.Tx) error {
+	if len(items) == 0 {
+		return nil
+	}
 
+	// build query to insert multiple items.
+	// we use the owner_id constraint to ensure that we can't add items to feeds
+	// of another user: if the owner_id in feeds doesn't match, (SELECT owner_id FROM owned_feed)
+	// will be null and inserts will be rejected
 	query := bytes.Buffer{}
-
-	// build query to insert items. we use the owner_id constraint to ensure that we can't add items to feeds
-	// of another user.
 	query.WriteString(`
 		WITH owned_feed AS (SELECT owner_id FROM feeds WHERE id = $1 AND owner_id = $2)
-		INSERT INTO feed_items(id, feed_id, owner_id, link, title, description) VALUES
+			INSERT INTO feed_items(id, feed_id, owner_id, link, title, description) VALUES
 	`)
 	params := []interface{}{feedID, user.ID}
 	itemCount := len(items)
 	for idx, item := range items {
+		//set missing fields
 		if item.ID == "" {
 			item.ID = newID()
 		}
 		item.FeedID = feedID
 		item.ownerID = user.ID
+		items[idx] = item //put it back in array so caller sees updated values
+
+		//add statement line and params
 		nextParam := len(params) + 1
 		fmt.Fprintf(&query, "($%d, $%d, (SELECT owner_id FROM owned_feed), $%d, $%d, $%d)",
 			nextParam, nextParam+1, nextParam+2, nextParam+3, nextParam+4)
 		params = append(params, item.ID, feedID, item.Link, item.Title, item.Description)
 		if idx < itemCount-1 {
-			query.WriteString(",\n")
+			query.WriteString(",")
 		}
 	}
 	res, err := tx.Exec(query.String(), params...)
@@ -185,7 +193,9 @@ func (fs *Feeds) AddItem(user User, item *FeedItem) error {
 	}
 	defer tx.Rollback()
 
-	err = fs.addItems(user, item.FeedID, []FeedItem{*item}, tx)
+	items := []FeedItem{*item}
+	err = fs.addItems(user, item.FeedID, items, tx)
+	*item = items[0]
 
 	return tx.Commit()
 }

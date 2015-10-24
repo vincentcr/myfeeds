@@ -4,9 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"gopkg.in/validator.v2"
-
 	"github.com/vincentcr/myfeeds/services"
+	"gopkg.in/validator.v2"
 )
 
 func main() {
@@ -172,7 +171,7 @@ func routeFeeds(m *Mux) {
 		if err := parseFeedRequest(r, &feed); err != nil {
 			panic(err)
 		}
-		err := c.Services.Feeds.Update(c.MustGetUser(), feed)
+		err := c.Services.Feeds.Update(c.MustGetUser(), &feed)
 		if err != nil {
 			panic(err)
 		}
