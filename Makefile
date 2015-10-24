@@ -48,3 +48,6 @@ clearcache:
 
 createdb:
 	$(PSQL_CMD) --set=dbuser=$(DBUSER) --set=dbpasswd=$(DBPASSWD) --set=dbname=$(DBNAME) -f ./db.sql
+
+clean:
+	rm -f $(APP_NAME)
