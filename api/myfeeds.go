@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/vincentcr/myfeeds/api/services"
-	"gopkg.in/validator.v2"
+	"github.com/vincentcr/validator"
 )
 
 func main() {

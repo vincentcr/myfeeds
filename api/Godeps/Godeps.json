@@ -17,6 +17,10 @@
 			"Rev": "afe1e2ddf0f05b7c29d388a3f8e76cb15c2231ca"
 		},
 		{
+			"ImportPath": "github.com/vincentcr/validator",
+			"Rev": "a1c36882908bc323e4bc2f632236c0b755acea88"
+		},
+		{
 			"ImportPath": "github.com/zenazn/goji",
 			"Comment": "v0.9.0-25-gf11b3b8",
 			"Rev": "f11b3b82931df3c540a0a960b6b1de60094d33d6"
@@ -42,10 +46,6 @@
 			"ImportPath": "gopkg.in/redis.v3",
 			"Comment": "v3.1.4",
 			"Rev": "d36559f9ce085e75cccdb58e9a54e36621bfd4c1"
-		},
-		{
-			"ImportPath": "gopkg.in/validator.v2",
-			"Rev": "8e445b9dc14ab1a1a78cc1f712df991307173ee6"
 		}
 	]
 }
