@@ -12,6 +12,7 @@ CREATE UNIQUE INDEX idx_users_email ON users(lower(email));
 CREATE TABLE feeds(
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   owner_id uuid REFERENCES users(id) NOT NULL,
+  date_created TIMESTAMP NOT NULL DEFAULT timeofday()::TIMESTAMP,
   link TEXT NOT NULL CHECK (link != ''),
   title TEXT NOT NULL CHECK (link != ''),
   description TEXT
@@ -26,7 +27,7 @@ CREATE TABLE feed_items(
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   feed_id uuid REFERENCES feeds(id) NOT NULL,
   owner_id uuid REFERENCES users(id) NOT NULL,
-  date_added timestamp NOT NULL DEFAULT timeofday()::timestamp,
+  date_added TIMESTAMP NOT NULL DEFAULT timeofday()::TIMESTAMP,
   link TEXT NOT NULL CHECK (link != ''),
   title TEXT NOT NULL CHECK (link != ''),
   description TEXT

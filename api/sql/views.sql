@@ -1,8 +1,9 @@
 
-CREATE OR REPLACE VIEW feeds_json AS SELECT
-  id, owner_id, row_to_json(feed_json) as json
+
+CREATE OR REPLACE VIEW feed_json AS SELECT
+  id, owner_id, date_created, row_to_json(feed_json) as json
   FROM (
-    SELECT id, owner_id, title, link,
+    SELECT id, owner_id,date_created, title, link,
       (
         SELECT COALESCE(array_to_json(array_agg(row_to_json(d))), '[]')
         FROM (
@@ -14,6 +15,13 @@ CREATE OR REPLACE VIEW feeds_json AS SELECT
       ) as items
   FROM feeds
   ) feed_json
+;
+
+CREATE OR REPLACE VIEW feeds_json AS
+  SELECT json_agg(json) as json, owner_id
+  FROM (
+    SELECT * FROM feed_json ORDER BY date_created
+  ) AS feeds GROUP BY owner_id
 ;
 
 CREATE OR REPLACE VIEW feeds_xml AS

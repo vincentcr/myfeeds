@@ -65,7 +65,7 @@ func (fs *Feeds) GetRss(user User, id RecordID) ([]byte, error) {
 
 func (fs *Feeds) GetAllJson(user User) ([]byte, error) {
 	var feedsJson []byte
-	err := fs.db.QueryRow("SELECT json_agg(json) FROM feeds_json WHERE owner_id=$1", user.ID).
+	err := fs.db.QueryRow("SELECT json FROM feeds_json WHERE owner_id=$1", user.ID).
 		Scan(&feedsJson)
 	if err != nil {
 		return nil, fmt.Errorf("Error fetching feeds for %v: %v", user.ID, err)
