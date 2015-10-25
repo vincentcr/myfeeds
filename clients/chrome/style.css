@@ -1,0 +1,25 @@
+body {
+  min-width: 357px;
+  overflow-x: hidden;
+}
+
+img {
+  margin: 5px;
+  border: 2px solid black;
+  vertical-align: middle;
+  width: 75px;
+  height: 75px;
+}
+
+.feed-list  {
+  list-style-type: none;
+}
+
+.feed-list a {
+  margin-right: 0.2em;
+}
+
+.feed-list .feed-count {
+  font-size: 0.8em;
+  color: #666;
+}

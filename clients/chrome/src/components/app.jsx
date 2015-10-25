@@ -13,7 +13,7 @@ export default class App extends React.Component {
       <div>
         <h1>My Feeds</h1>
         {user &&
-          <h3 className='user-info'>Welcome, {user.email}</h3>
+          <h3 className='user-info'>Welcome {user.email}</h3>
         }
         <div className="main">
           {this.props.children}

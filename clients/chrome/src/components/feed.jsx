@@ -100,28 +100,27 @@ constructor() {
   }
 
   renderButtons() {
-    const buttons = !this.props.isEditing? this.renderViewButtons() : this.renderEditButtons();
+    const buttons = !this.props.isEditing? this.viewButtons() : this.editButtons();
     return (
-      <div className='buttons'>
+      <div className='btn-group' role="group" >
         {buttons}
       </div>
     );
   }
 
-  renderViewButtons() {
-    return (
-      <button className='edit' onClick={e => this.handleBeginEditFeed(e)}>edit</button>
-    );
+  viewButtons() {
+    return [
+      <Link className='edit btn btn-default' to='/feeds'>all feeds</Link>,
+      <button className='edit btn btn-default' onClick={e => this.handleBeginEditFeed(e)}>edit</button>,
+    ];
   }
 
-  renderEditButtons() {
-    return (
-      <span>
-        <button className='save' onClick={e => this.handleSaveFeed(e)}>save</button>
-        <button className='cancel' onClick={e => this.handleCancelEditFeed(e)}>cancel</button>
-        <button className='add-item' onClick={e => this.handleAddItem(e)}>add item</button>
-      </span>
-    );
+  editButtons() {
+    return [
+      <button className='save btn btn-default btn-primary' onClick={e => this.handleSaveFeed(e)}>save</button>,
+      <button className='cancel btn btn-default' onClick={e => this.handleCancelEditFeed(e)}>cancel</button>,
+      <button className='add-item btn btn-default' onClick={e => this.handleAddItem(e)}>add item</button>,
+    ];
   }
 
   renderTitle() {
@@ -171,9 +170,9 @@ class FeedItemList extends React.Component {
     }));
     console.log('---- nodes', itemNodes, 'keys', itemNodes.map(n => n.key));
     return (
-      <ul className='items'>
+      <ol className='items'>
         {itemNodes}
-      </ul>
+      </ol>
     );
   }
 }

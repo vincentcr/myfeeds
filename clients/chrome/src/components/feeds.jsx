@@ -28,9 +28,13 @@ export default class FeedList extends React.Component {
   render() {
     const { feeds, isFetching, children, err } = this.props;
     const feedCount = Object.keys(feeds).length;
+    const feedNodes = Object.values(feeds).map(feed => this.renderFeed(feed));
 
     return (
       <div className="feeds">
+
+        <h4>feeds</h4>
+
         {isFetching && feedCount === 0 &&
           <div className='loading'>Loading...</div>
         }
@@ -39,13 +43,16 @@ export default class FeedList extends React.Component {
         }
         {feedCount > 0 &&
           <div style={{ opacity: isFetching ? 0.5 : 1 }}>
-            <Feeds {...this.props} />
+            <ul className='feed-list'>
+              {feedNodes}
+              <li>
+                <Link className='feed-link' to='/feeds/new'>
+                  add new feed...
+                </Link>
+              </li>
+            </ul>
           </div>
         }
-
-        <div>
-          <button onClick={this.handleAddNew.bind(this)}>add new feed</button>
-        </div>
 
         {err &&
           <span className='error'>
@@ -58,34 +65,15 @@ export default class FeedList extends React.Component {
     );
   }
 
-}
-
-class Feeds extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-
-  static propTypes = {
-    feeds: PropTypes.object,
-  }
-
-  render() {
-    const {feeds} = this.props;
-    const feedNodes = Object.values(feeds).map(feed => this.renderFeed(feed));
-    return (
-      <ul className='feed-list'>
-        {feedNodes}
-      </ul>
-    );
-  }
-
   renderFeed(feed) {
+    const empty = feed.items.length === 0;
+    const countLabel = empty ? 'empty' : `${feed.items.length} items`;
     return (
       <li key={feed.id}>
         <Link className='feed-link' to={`/feeds/${feed.id}`}>
           {feed.title}
         </Link>
-        ({feed.items.length} items)
+        <span className='feed-count'>({countLabel})</span>
       </li>
     );
   }

@@ -2,43 +2,11 @@
 <html>
   <head>
     <title>My Feeds</title>
-    <style>
-      body {
-        min-width: 357px;
-        overflow-x: hidden;
-      }
-
-      img {
-        margin: 5px;
-        border: 2px solid black;
-        vertical-align: middle;
-        width: 75px;
-        height: 75px;
-      }
-    </style>
-
-    <!--
-      - JavaScript and HTML must be in separate files: see our Content Security
-      - Policy documentation[1] for details and explanation.
-      -
-      - [1]: http://developer.chrome.com/extensions/contentSecurityPolicy.html
-     -->
+    <link rel="stylesheet" type="text/css" href="node_modules/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
     <script src="assets/index.js"></script>
-    <script type="text/javascript">
-      (function() {
-            window.onerror = function (msg, url, line, col, err) {
-              var timestamp = new Date().toISOString();
-              console.log(timestamp + ' uncaught error: ' + msg + '     at:' + line + ':' + col + '\n');
-              if (err) {
-                console.log(err);
-              }
-            };
-
-       })();
-    </script>
-
   </head>
   <body>
   </body>
 </html>
-
