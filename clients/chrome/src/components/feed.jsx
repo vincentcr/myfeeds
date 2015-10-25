@@ -1,7 +1,10 @@
 import React, {findDOMNode, PropTypes} from 'react';
 import { connect } from 'react-redux';
-import { fetchCurrentFeedIfNeeded, beginEditFeed, saveFeed, cancelEditFeed, addFeedItem, } from '../actions';
 import classNames from 'classnames';
+import { Link } from 'react-router';
+import {
+  fetchCurrentFeedIfNeeded, beginEditFeed, createFeed, saveFeed, cancelEditFeed, addFeedItem, removeFeedItem,
+} from '../actions';
 
 @connect(state => state.feed)
 export default class Feed extends React.Component {
@@ -18,7 +21,13 @@ constructor() {
 
   componentDidMount() {
     const feedID = this.props.params.feedID;
-    this.props.dispatch(fetchCurrentFeedIfNeeded(feedID));
+    console.log('componentDidMount:feed:', feedID);
+    if (feedID === 'new') {
+      this.props.dispatch(createFeed());
+      this.props.dispatch(beginEditFeed());
+    } else {
+      this.props.dispatch(fetchCurrentFeedIfNeeded(feedID));
+    }
   }
 
   handleBeginEditFeed(event) {

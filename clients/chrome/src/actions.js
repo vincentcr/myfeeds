@@ -4,6 +4,7 @@ import {
   FEEDS_FETCH_INVALIDATE,
   FEEDS_FETCH_COMPLETE,
   FEEDS_UPDATE,
+  FEED_CREATE,
   FEED_SELECT,
   FEED_EDIT_BEGIN,
   FEED_EDIT_COMPLETE,
@@ -68,6 +69,11 @@ export function fetchCurrentFeedIfNeeded(feedID) {
   };
 }
 
+export function createFeed() {
+  const feed = { key: 'new-feed-' + Date.now(), items:[] };
+  return {type:FEED_CREATE, feed};
+}
+
 export function selectFeed(feed) {
   return {type:FEED_SELECT, feed};
 }
@@ -75,7 +81,6 @@ export function selectFeed(feed) {
 export function beginEditFeed() {
   return {type:FEED_EDIT_BEGIN};
 }
-
 
 export function saveFeed(feed) {
   return dispatch => {
@@ -115,6 +120,6 @@ export function cancelEditFeed() {
 }
 
 export function addFeedItem() {
-  const item = { key: 'new-feed-' + Date.now() };
-  return {type: FEED_ADD_ITEM, item };
+  const item = { key: 'new-feed-item-' + Date.now() };
+  return {type: FEED_ADD_ITEM, item};
 }

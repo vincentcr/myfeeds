@@ -3,6 +3,7 @@ export const FEEDS_FETCH_INVALIDATE = 'FEEDS_FETCH_INVALIDATE';
 export const FEEDS_FETCH_COMPLETE = 'FEEDS_FETCH_COMPLETE';
 export const FEEDS_UPDATE = 'FEEDS_UPDATE';
 
+export const FEED_CREATE = 'FEED_CREATE';
 export const FEED_SELECT = 'FEED_SELECT';
 export const FEED_ADD = 'FEED_ADD';
 export const FEED_REMOVE = 'FEED_REMOVE';

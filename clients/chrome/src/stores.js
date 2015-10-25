@@ -6,6 +6,7 @@ import {
   FEEDS_FETCH_INVALIDATE,
   FEEDS_FETCH_COMPLETE,
   FEEDS_UPDATE,
+  FEED_CREATE,
   FEED_SELECT,
   FEED_EDIT_BEGIN,
   FEED_EDIT_COMPLETE,
@@ -56,6 +57,8 @@ function toFeedMap(feedList) {
 function feed(state = INITIAL_STATE.feed, action) {
   console.log(`store:feed:${action.type}`, {state, action});
   switch(action.type) {
+    case FEED_CREATE:
+      return {...state, currentFeed:action.feed, origFeed:action.feed};
     case FEED_SELECT:
       return {...state, currentFeed:action.feed, origFeed:action.feed};
     case FEED_EDIT_BEGIN:
