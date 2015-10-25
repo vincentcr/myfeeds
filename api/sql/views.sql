@@ -4,7 +4,7 @@ CREATE OR REPLACE VIEW feeds_json AS SELECT
   FROM (
     SELECT id, owner_id, title, link,
       (
-        SELECT array_to_json(array_agg(row_to_json(d)))
+        SELECT COALESCE(array_to_json(array_agg(row_to_json(d))), '[]')
         FROM (
           SELECT id, link, title, description, date_added
           FROM feed_items
