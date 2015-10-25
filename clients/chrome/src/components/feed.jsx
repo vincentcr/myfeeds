@@ -70,6 +70,8 @@ constructor() {
       'edit-mode' : this.props.isEditing,
     });
     const feed = this.props.currentFeed;
+    const {isEditing, dispatch} = this.props;
+    const showAsEmpty = feed != null && feed.items.length === 0 && !isEditing;
     return (
       <div className={cssClasses}>
         {!feed &&
@@ -79,7 +81,12 @@ constructor() {
           <div>
             { this.renderButtons() }
             { this.renderTitle() }
-            <FeedItemList ref='itemList' isEditing={this.props.isEditing} items={feed.items} />
+            {showAsEmpty &&
+              <div>(empty)</div>
+            }
+            {!showAsEmpty &&
+              <FeedItemList ref='itemList' dispatch={dispatch} isEditing={isEditing} items={feed.items} />
+            }
           </div>
         }
       </div>
@@ -143,6 +150,10 @@ constructor() {
 
 class FeedItemList extends React.Component {
 
+  static propTypes = {
+    dispatch: PropTypes.func.isRequired,
+  }
+
   getItems() {
     const items = Object.keys(this.refs)
       .filter(key => key.startsWith('item_'))
@@ -154,6 +165,7 @@ class FeedItemList extends React.Component {
     const itemNodes = this.props.items.map((item, idx) => React.createElement(FeedItem, {
         item,
         key: item.id,
+        dispatch: this.props.dispatch,
         isEditing: this.props.isEditing,
         ref: `item_${idx}`,
     }));
@@ -174,6 +186,10 @@ class FeedItem extends React.Component {
     this.state = {...item};
   }
 
+  static propTypes = {
+    dispatch: PropTypes.func.isRequired,
+  }
+
   handleOnChange(field, event) {
     const value = event.target.value;
     this.setState({
@@ -181,6 +197,11 @@ class FeedItem extends React.Component {
       isModified: true,
       [field] : value,
     });
+  }
+
+  handleDelete() {
+    const {dispatch, item} = this.props;
+    dispatch(removeFeedItem(item));
   }
 
   render() {
@@ -200,9 +221,9 @@ class FeedItem extends React.Component {
   renderEdit(item) {
     return (
       <div>
-        <input type='checkbox'></input>
-        <input type='text' ref='title' defaultValue={item.title} placeholder='title' onChange={this.handleOnChange.bind(this, 'title')} />
-        <input type='text' ref='link' defaultValue={item.link} placeholder='link' onChange={this.handleOnChange.bind(this, 'link')} />
+        <input type='text' ref='title' defaultValue={item.title} placeholder='title' onChange={(e) => this.handleOnChange('title', e)} />
+        <input type='text' ref='link' defaultValue={item.link} placeholder='link' onChange={(e) => this.handleOnChange('link', e)} />
+        <button className='btn btn-default btn-danger' onClick={(e) => this.handleDelete(e)}>delete</button>
       </div>
     );
   }

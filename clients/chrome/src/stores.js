@@ -13,6 +13,7 @@ import {
   FEED_SAVE_BEGIN,
   FEED_SAVE_COMPLETE,
   FEED_ADD_ITEM,
+  FEED_REMOVE_ITEM,
 } from './actionTypes';
 
 const INITIAL_STATE = Object.freeze({
@@ -69,10 +70,16 @@ function feed(state = INITIAL_STATE.feed, action) {
       return {...state, isSaving:true};
     case FEED_SAVE_COMPLETE:
       return {...state, err:action.err, isSaving:false};
-    case FEED_ADD_ITEM:
+    case FEED_ADD_ITEM: {
       const items = state.currentFeed.items.concat(action.item);
       const currentFeed = {...state.currentFeed, items};
       return {...state, currentFeed};
+    }
+    case FEED_REMOVE_ITEM: {
+      const items = state.currentFeed.items.filter((item) => item != action.item);
+      const currentFeed = {...state.currentFeed, items};
+      return {...state, currentFeed};
+    }
     default:
       return state;
   }

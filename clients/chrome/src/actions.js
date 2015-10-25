@@ -11,6 +11,7 @@ import {
   FEED_SAVE_BEGIN,
   FEED_SAVE_COMPLETE,
   FEED_ADD_ITEM,
+  FEED_REMOVE_ITEM,
 } from './actionTypes';
 
 export function invalidateFeeds() {
@@ -122,4 +123,8 @@ export function cancelEditFeed() {
 export function addFeedItem() {
   const item = { key: 'new-feed-item-' + Date.now() };
   return {type: FEED_ADD_ITEM, item};
+}
+
+export function removeFeedItem(item) {
+  return {type: FEED_REMOVE_ITEM, item};
 }
