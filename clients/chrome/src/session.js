@@ -1,5 +1,4 @@
 const STORAGE_ROOT = 'myfeeds.session.';
-import history from './history';
 
 export class Session {
 
@@ -12,15 +11,6 @@ export class Session {
         this._data[key] = val;
       }
     }
-  }
-
-  isSignedIn() {
-    return this.get('user') != null;
-  }
-
-  signout() {
-    this.clear();
-    setTimeout(() => history.replaceState(null, '/'));
   }
 
   get(key) {

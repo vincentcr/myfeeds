@@ -1,4 +1,5 @@
 import Session from './session';
+import history from './history';
 import 'whatwg-fetch';
 
 const API_BASE_URL = 'http://localhost:3000/api/v1';
@@ -95,7 +96,7 @@ export class Api {
         if (err.status === 401) {
           if (Session.isSignedIn()) {
             console.log('invalid token, signout');
-            Session.signout();
+            Users.signout();
           }
         }
         console.log('request failed', err, {url, opts});
@@ -144,11 +145,17 @@ export const Users = Api.create({
     ;
   },
 
+  isSignedIn() {
+    return Session.get('token') != null;
+  },
+
   signout() {
-    if (this._api.token != null) {
-      return this.delete(`/users/tokens/${this.token}`)
+    const token = Session.get('token');
+    if (token != null) {
+      return this.delete(`/users/tokens/${token}`)
       .finally(() => {
         Session.clear();
+        setTimeout(() => history.replaceState(null, '/signin'));
       });
     } else {
       return Promise.reject(new Error('not signed in'));

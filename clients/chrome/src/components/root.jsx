@@ -4,7 +4,7 @@ import history from '../history';
 import { Provider } from 'react-redux';
 import configureStore from '../stores';
 
-import Session from '../session';
+import {Users} from '../api';
 import App from './app.jsx';
 import Signin from './signin.jsx';
 import FeedList from './feeds.jsx';
@@ -43,7 +43,7 @@ export default class Root extends React.Component {
   static checkAccess(nextState, replaceState) {
     const path = nextState.location.pathname.replace(/^(.+?)(\?.+)$/, '$1'); //remove query from path
     const isAnonymousRoute = ANONYMOUS_ROUTES.indexOf(path) >= 0;
-    const isSignedIn = Session.isSignedIn();
+    const isSignedIn = Users.isSignedIn();
 
     let redirect;
     if (!isSignedIn && !isAnonymousRoute) {
