@@ -1,18 +1,24 @@
 import React, {findDOMNode, PropTypes} from 'react';
 import { connect } from 'react-redux';
-import classNames from 'classnames';
 import { Link } from 'react-router';
+import classNames from 'classnames';
 import {
-  fetchCurrentFeedIfNeeded, beginEditFeed, createFeed, saveFeed, cancelEditFeed, addFeedItem, removeFeedItem,
+  fetchCurrentFeedIfNeeded,
+  beginEditFeed,
+  createFeed,
+  saveFeed,
+  cancelEditFeed,
+  addFeedItem,
+  removeFeedItem,
 } from '../actions';
 
 @connect(state => state.feed)
 export default class Feed extends React.Component {
 
-constructor() {
- super();
- this.state = {  };
-}
+  constructor() {
+   super();
+   this.state = { };
+  }
 
   static propTypes = {
     children: PropTypes.any,
@@ -21,14 +27,29 @@ constructor() {
 
   componentDidMount() {
     const feedID = this.props.params.feedID;
-    console.log('componentDidMount:feed:', feedID);
-    if (feedID === 'new') {
-      this.props.dispatch(createFeed());
-      this.props.dispatch(beginEditFeed());
-    } else {
-      this.props.dispatch(fetchCurrentFeedIfNeeded(feedID));
+    this._loadFeed(feedID);
+  }
+
+  componentWillReceiveProps(nextProps) {
+    const nextFeedID = nextProps.params.feedID;
+    this._loadFeed(nextFeedID);
+  }
+
+  _loadFeed(newFeedID) {
+    const {feedID} = this.state;
+    if (newFeedID !== feedID) {
+      console.log(`loadFeed:${newFeedID}; current:${feedID}`);
+      const {dispatch} = this.props;
+      this.setState({feedID:newFeedID});
+      if (newFeedID === 'new') {
+        dispatch(createFeed());
+        dispatch(beginEditFeed());
+      } else {
+        dispatch(fetchCurrentFeedIfNeeded(newFeedID));
+      }
     }
   }
+
 
   handleBeginEditFeed(event) {
     event.preventDefault();
@@ -70,7 +91,7 @@ constructor() {
       'edit-mode' : this.props.isEditing,
     });
     const feed = this.props.currentFeed;
-    const {isEditing, dispatch} = this.props;
+    const {isEditing, dispatch, children} = this.props;
     const showAsEmpty = feed != null && feed.items.length === 0 && !isEditing;
     return (
       <div className={cssClasses}>
@@ -85,8 +106,13 @@ constructor() {
               <div>(empty)</div>
             }
             {!showAsEmpty &&
-              <FeedItemList ref='itemList' dispatch={dispatch} isEditing={isEditing} items={feed.items} />
+              <FeedItemList ref='itemList' dispatch={dispatch} isEditing={isEditing} feed={feed} />
             }
+          </div>
+        }
+        {children &&
+          <div>
+            {this.props.children}
           </div>
         }
       </div>
@@ -102,7 +128,7 @@ constructor() {
   renderButtons() {
     const buttons = !this.props.isEditing? this.viewButtons() : this.editButtons();
     return (
-      <div className='btn-group' role="group" >
+      <div className='btn-group btn-toolbar' role="group" >
         {buttons}
       </div>
     );
@@ -110,16 +136,36 @@ constructor() {
 
   viewButtons() {
     return [
-      <Link className='edit btn btn-default' to='/feeds'>all feeds</Link>,
-      <button className='edit btn btn-default' onClick={e => this.handleBeginEditFeed(e)}>edit</button>,
+      <button className='add-item btn btn-primary' onClick={e => this.handleBeginEditFeed(e)}>
+        <span className='glyphicon glyphicon-edit' aria-hidden="true"></span>
+        {' '}
+        edit
+      </button>,
+      <button className='btn btn-default btn-danger' onClick={(e) => this.handleDelete(e)}>
+        <span className="glyphicon glyphicon-trash" aria-hidden="true"></span>
+        {' '}
+        delete
+      </button>,
     ];
   }
 
   editButtons() {
     return [
-      <button className='save btn btn-default btn-primary' onClick={e => this.handleSaveFeed(e)}>save</button>,
-      <button className='cancel btn btn-default' onClick={e => this.handleCancelEditFeed(e)}>cancel</button>,
-      <button className='add-item btn btn-default' onClick={e => this.handleAddItem(e)}>add item</button>,
+      <button className='add-item btn btn-primary' onClick={e => this.handleAddItem(e)}>
+        <span className='glyphicon glyphicon-plus' aria-hidden="true"></span>
+        {' '}
+        add item
+      </button>,
+      <button className='save btn btn-default btn-success' onClick={e => this.handleSaveFeed(e)}>
+        <span className='glyphicon glyphicon-ok' aria-hidden="true"></span>
+        {' '}
+        save
+      </button>,
+      <button className='cancel btn btn-danger' onClick={e => this.handleCancelEditFeed(e)}>
+        <span className='glyphicon glyphicon-remove' aria-hidden="true"></span>
+        {' '}
+        cancel
+      </button>,
     ];
   }
 
@@ -142,7 +188,15 @@ constructor() {
 
   renderTitleEdit(title) {
     return (
-      <input type='text' ref='title' placeholder='title' defaultValue={title} onChange={e => this.markModified(e)} />
+      <form className="form-inline">
+        <div className="form-group">
+          <label htmlFor="feed-title">Feed Title</label> {' '}
+          <input type='text' className="form-control"
+            id='feed-title' ref='title' placeholder='title'
+            defaultValue={title} onChange={e => this.markModified(e)}
+          />
+        </div>
+      </form>
     );
   }
 }
@@ -161,19 +215,32 @@ class FeedItemList extends React.Component {
   }
 
   render() {
-    const itemNodes = this.props.items.map((item, idx) => React.createElement(FeedItem, {
+    const {feed} = this.props;
+    const itemNodes = feed.items.map((item, idx) => React.createElement(FeedItem, {
         item,
+        feedID: feed.id,
+        idx: idx,
         key: item.id,
         dispatch: this.props.dispatch,
         isEditing: this.props.isEditing,
         ref: `item_${idx}`,
     }));
-    console.log('---- nodes', itemNodes, 'keys', itemNodes.map(n => n.key));
     return (
-      <ol className='items'>
-        {itemNodes}
-      </ol>
-    );
+      <table className='feed-item-table table table-condensed' style={{width: 'auto'}}>
+        <thead>
+          <tr>
+            <th> # </th>
+            <th> title </th>
+            <th> link </th>
+            <th> description </th>
+            <th> </th>
+          </tr>
+        </thead>
+        <tbody>
+          {itemNodes}
+        </tbody>
+      </table>
+      );
   }
 }
 
@@ -203,28 +270,52 @@ class FeedItem extends React.Component {
     dispatch(removeFeedItem(item));
   }
 
+
   render() {
-    const item = this.props.item;
-    const node = this.props.isEditing ? this.renderEdit(item) : this.renderView(item);
+    const {idx,item,isEditing,feedID} = this.props;
+    const cells = isEditing ? this.renderEditCells(item) : this.renderViewCells(item);
     return (
-      <li className='feed-item'> {node} </li>
+      // <li className='feed-item'> {node} </li>
+      <tr>
+        <td>{idx + 1}.</td>
+        {cells}
+        <td>
+          <a href={item.link} target={item.id} className="btn btn-default">
+              <span className="glyphicon glyphicon-new-window" aria-hidden="true"></span>
+          </a>
+          {' '}
+          <Link className='feed-item-link' to={`/feeds/${feedID}/items/${item.id}`}>
+            <span className='glyphicon glyphicon-edit' aria-hidden='true'></span>
+          </Link>
+          {' '}
+          <button className='btn btn-default btn-danger' onClick={(e) => this.handleDelete(e)}>
+              <span className="glyphicon glyphicon-trash" aria-hidden="true"></span>
+          </button>
+        </td>
+      </tr>
     );
   }
 
-  renderView(item) {
-    return (
-      <a href={item.link} target={item.id}>{item.title}</a>
-    );
+  renderViewCells(item) {
+    return [
+        <td>{item.title}</td>,
+        <td>{item.link}</td>,
+        <td>{item.description}</td>,
+    ];
   }
 
-  renderEdit(item) {
-    return (
-      <div>
+  renderEditCells(item) {
+    return [
+      <td>
         <input type='text' ref='title' defaultValue={item.title} placeholder='title' onChange={(e) => this.handleOnChange('title', e)} />
+      </td>,
+      <td>
         <input type='text' ref='link' defaultValue={item.link} placeholder='link' onChange={(e) => this.handleOnChange('link', e)} />
-        <button className='btn btn-default btn-danger' onClick={(e) => this.handleDelete(e)}>delete</button>
-      </div>
-    );
+      </td>,
+      <td>
+        <input type='text' ref='description' defaultValue={item.description} placeholder='description' onChange={(e) => this.handleOnChange('description', e)} />
+      </td>,
+    ];
   }
 
 }

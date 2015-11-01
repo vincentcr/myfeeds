@@ -1,5 +1,4 @@
 import React, {PropTypes} from 'react';
-import Session from '../session';
 
 export default class App extends React.Component {
 
@@ -8,16 +7,10 @@ export default class App extends React.Component {
   }
 
   render() {
-    const user = Session.get('user');
+    const children = this.props.children;
     return (
-      <div>
-        <h1>My Feeds</h1>
-        {user &&
-          <h3 className='user-info'>Welcome {user.email}</h3>
-        }
-        <div className="main">
-          {this.props.children}
-        </div>
+      <div className='app'>
+        {children}
       </div>
     );
   }
