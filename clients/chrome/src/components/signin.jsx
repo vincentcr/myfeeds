@@ -27,22 +27,35 @@ export default class Signin extends React.Component {
       console.log('error', err);
       this.setState({error: err.toString()});
     });
-
   }
 
   render() {
     return (
-      <form className='signin-form' role='form' onSubmit={this.handleSubmit.bind(this)} >
-        <div className='form-group'>
-          <input type='email' ref='email' placeholder='Email' required />
-          <input type='password' ref='password' placeholder='Password' required />
-        </div>
-        <input type='submit' value='sign in' name='signin' />
-        <input type='submit' value='sign up' name='signup' />
-        <div className='error'>
-          {this.state.error}
-        </div>
-      </form>
+      <div className='container signin-form-container'>
+
+        <form className='signin-form' role='form' onSubmit={this.handleSubmit.bind(this)}>
+
+          <div className="form-group">
+            <label htmlFor="email">email</label>
+            <input type="email" className="form-control" id="email" ref='email' placeholder="email" />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input type="password" className="form-control" id="password" ref='password' placeholder="password" />
+          </div>
+
+          <input type='submit' className='btn btn-default' value='sign in' name='signin' />
+          {' '}
+          <input type='submit' className='btn btn-default' value='sign up' name='signup' />
+
+          <div className='error'>
+            {this.state.error}
+          </div>
+
+        </form>
+
+      </div>
     );
   }
 }

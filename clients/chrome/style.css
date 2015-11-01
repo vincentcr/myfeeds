@@ -12,6 +12,25 @@ img {
 }
 
 .feed-list  {
+.signin-form-container {
+  position: relative;
+  margin: 0 auto;
+  max-width: 400px;
+  padding-top: 40px;
+}
+
+.signin-form:after {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #959595;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  content: "My Feeds Sign in";
+}
+
   list-style-type: none;
 }
 
