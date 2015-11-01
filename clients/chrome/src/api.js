@@ -94,7 +94,7 @@ export class Api {
       })
       .catch((err) => {
         if (err.status === 401) {
-          if (Session.isSignedIn()) {
+          if (Users.isSignedIn()) {
             console.log('invalid token, signout');
             Users.signout();
           }
@@ -151,12 +151,13 @@ export const Users = Api.create({
 
   signout() {
     const token = Session.get('token');
+    function finalize() {
+      Session.clear();
+      setTimeout(() => history.replaceState(null, '/signin'));
+    }
+
     if (token != null) {
-      return this.delete(`/users/tokens/${token}`)
-      .finally(() => {
-        Session.clear();
-        setTimeout(() => history.replaceState(null, '/signin'));
-      });
+      return this._api.delete(`/users/tokens/${token}`).then(finalize).catch(finalize);
     } else {
       return Promise.reject(new Error('not signed in'));
     }
