@@ -13,6 +13,7 @@ import {
   FEED_SAVE_BEGIN,
   FEED_SAVE_COMPLETE,
   FEED_ADD_ITEM,
+  FEED_INSERT_ITEM,
   FEED_REMOVE_ITEM,
 } from './actionTypes';
 
@@ -72,6 +73,13 @@ function feed(state = INITIAL_STATE.feed, action) {
       return {...state, err:action.err, isSaving:false};
     case FEED_ADD_ITEM: {
       const items = state.currentFeed.items.concat(action.item);
+      const currentFeed = {...state.currentFeed, items};
+      return {...state, currentFeed};
+    }
+    case FEED_INSERT_ITEM: {
+      const {item, index} = action;
+      const items = [...state.currentFeed.items];
+      items.splice(index, 0, item);
       const currentFeed = {...state.currentFeed, items};
       return {...state, currentFeed};
     }

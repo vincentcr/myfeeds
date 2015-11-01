@@ -11,6 +11,7 @@ import {
   FEED_SAVE_BEGIN,
   FEED_SAVE_COMPLETE,
   FEED_ADD_ITEM,
+  FEED_INSERT_ITEM,
   FEED_REMOVE_ITEM,
 } from './actionTypes';
 
@@ -123,6 +124,13 @@ export function cancelEditFeed() {
 export function addFeedItem() {
   const item = { key: 'new-feed-item-' + Date.now() };
   return {type: FEED_ADD_ITEM, item};
+}
+
+export function moveFeedItem(item, newIndex) {
+  return (dispatch) => {
+    dispatch(removeFeedItem(item));
+    dispatch({type: FEED_INSERT_ITEM, item, index:newIndex});
+  };
 }
 
 export function removeFeedItem(item) {
