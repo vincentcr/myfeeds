@@ -71,6 +71,11 @@ func routeUsers(m *Mux) {
 		jsonify(res, w)
 	})
 
+	m.Get("/api/v1/users/me", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
+		user := c.MustGetUser()
+		jsonify(user, w)
+	}))
+
 	m.Post("/api/v1/users/tokens", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		user := c.MustGetUser()
 		token, err := c.Services.Users.CreateToken(user)
@@ -85,9 +90,14 @@ func routeUsers(m *Mux) {
 		jsonify(res, w)
 	}))
 
-	m.Get("/api/v1/users/me", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
+	m.Delete("/api/v1/users/tokens/:token", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		user := c.MustGetUser()
-		jsonify(user, w)
+		token := services.Token(c.URLParams["token"])
+		err := c.Services.Users.DeleteToken(user, token)
+		if err != nil {
+			panic(err)
+		}
+		w.WriteHeader(http.StatusNoContent)
 	}))
 }
 

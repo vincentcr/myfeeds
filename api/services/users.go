@@ -55,3 +55,7 @@ func (users *Users) AuthenticateWithToken(token string) (User, error) {
 func (users *Users) CreateToken(user User) (Token, error) {
 	return users.tokenCreate(user)
 }
+
+func (users *Users) DeleteToken(user User, token Token) error {
+	return users.tokenDelete(user.ID, token)
+}

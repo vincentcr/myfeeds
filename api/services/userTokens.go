@@ -94,7 +94,7 @@ func (users *Users) tokenGetUser(token Token) (User, error) {
 	return user, nil
 }
 
-func (users *Users) tokenDelete(userID string, token Token) error {
+func (users *Users) tokenDelete(userID RecordID, token Token) error {
 	key := fmt.Sprintf(tokenKeyFormat, token)
 	err := users.redis.Del(key).Err()
 	if err != nil {
