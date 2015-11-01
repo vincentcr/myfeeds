@@ -1,4 +1,8 @@
+/* global require */
 import 'babel/polyfill';
+import jquery from 'jquery';
+window.jQuery = jquery;
+require('bootstrap'); //if we use import the jQuery global will not be defined yet
 import Root from './components/root.jsx';
 
 document.addEventListener('DOMContentLoaded', () => Root.create(document.body));
