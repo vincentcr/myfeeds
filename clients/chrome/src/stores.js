@@ -1,6 +1,6 @@
 import { createStore, applyMiddleware, combineReducers } from 'redux';
 import thunkMiddleware from 'redux-thunk';
-import loggerMiddleware from 'redux-logger';
+import createLoggerMiddleware from 'redux-logger';
 import {
   FEEDS_FETCH_BEGIN,
   FEEDS_FETCH_INVALIDATE,
@@ -98,7 +98,7 @@ const rootReducer = combineReducers({feedList, feed});
 
 const createStoreWithMiddleware = applyMiddleware(
   thunkMiddleware,
-  loggerMiddleware
+  createLoggerMiddleware()
 )(createStore);
 
 export default function configureStore(initialState) {

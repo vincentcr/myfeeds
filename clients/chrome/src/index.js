@@ -2,10 +2,12 @@
 import 'babel/polyfill';
 import jquery from 'jquery';
 window.jQuery = jquery;
-require('bootstrap'); //if we use import the jQuery global will not be defined yet
+require('bootstrap'); //if we use import the jQuery global will not be defined yet at import time
 import Root from './components/root.jsx';
 
-document.addEventListener('DOMContentLoaded', () => Root.create(document.body));
+document.addEventListener('DOMContentLoaded', () =>
+  Root.create(document.querySelector('#app-root'))
+);
 
 window.onerror = function(msg, url, line, col, err) {
   const timestamp = new Date().toISOString();

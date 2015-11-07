@@ -1,4 +1,5 @@
 import React from 'react';
+import { render } from 'react-dom';
 import { Redirect, Router, Route, IndexRoute } from 'react-router';
 import history from '../history';
 import { Provider } from 'react-redux';
@@ -12,32 +13,31 @@ import FeedItem from './feedItem.jsx';
 import Feed from './feed.jsx';
 
 const ANONYMOUS_ROUTES = ['/signin', '/signup'];
-const store = configureStore();
 
-export default class Root extends React.Component {
+export default class Root {
 
   static create(rootNode) {
-    React.render(<Root />, rootNode);
-  }
+    const store = configureStore();
 
-  render () {
-    return (
+    render(
       <Provider store={store}>
-        {() => Root.renderApp()}
-      </Provider>
+        <Routes />
+      </Provider>,
+      rootNode
     );
   }
+}
 
-  static renderApp() {
-    console.log('feed item', FeedItem)
+class Routes extends React.Component {
+  render() {
     return (
       <Router history={history}>
         <Route path='/' component={App}>
           <IndexRoute component={FeedList} />
           <Route path='signin' name='signin' onEnter={this.checkAccess} component={Signin}/>
-          <Route path='feeds' name='feeds'  onEnter={this.checkAccess} components={{FeedList}}>
-            <Route path=':feedID' name='feed' onEnter={this.checkAccess} components={{Feed}}>
-              <Route path='items/:itemID' name='item' onEnter={this.checkAccess} components={{FeedItem}} />
+          <Route path='feeds' name='feeds'  onEnter={this.checkAccess} component={FeedList}>
+            <Route path=':feedID' name='feed' onEnter={this.checkAccess} component={Feed}>
+              <Route path='items/:itemID' name='item' onEnter={this.checkAccess} component={FeedItem} />
             </Route>
           </Route>
         </Route>
@@ -47,7 +47,7 @@ export default class Root extends React.Component {
     );
   }
 
-  static checkAccess(nextState, replaceState) {
+  checkAccess(nextState, replaceState) {
     const path = nextState.location.pathname.replace(/^(.+?)(\?.+)$/, '$1'); //remove query from path
     const isAnonymousRoute = ANONYMOUS_ROUTES.indexOf(path) >= 0;
     const isSignedIn = Users.isSignedIn();
