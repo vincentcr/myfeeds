@@ -39,7 +39,7 @@ func newFeeds(config Config, db *sql.DB, redisClient *redis.Client) (*Feeds, err
 func (fs *Feeds) GetJson(user User, id RecordID) ([]byte, error) {
 	var feedJson []byte
 	err := fs.db.
-		QueryRow("SELECT json FROM feeds_json WHERE id=$1 and owner_id=$2", id, user.ID).
+		QueryRow("SELECT json FROM feed_json WHERE id=$1 and owner_id=$2", id, user.ID).
 		Scan(&feedJson)
 	if err == sql.ErrNoRows {
 		return nil, ErrNotFound
@@ -214,7 +214,7 @@ func (fs *Feeds) UpdateItem(user User, item FeedItem) error {
 }
 
 func (fs *Feeds) DeleteItem(user User, itemID RecordID) error {
-	res, err := fs.db.Exec("DELETE FROM feed_items WHERE id=$1 AND owner_id=$5", itemID, user.ID)
+	res, err := fs.db.Exec("DELETE FROM feed_items WHERE id=$1 AND owner_id=$2", itemID, user.ID)
 	if err != nil {
 		return err
 	}
