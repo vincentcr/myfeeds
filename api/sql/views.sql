@@ -3,11 +3,11 @@
 CREATE OR REPLACE VIEW feed_json AS SELECT
   id, owner_id, date_created, row_to_json(feed_json) as json
   FROM (
-    SELECT id, owner_id,date_created, title, link,
+    SELECT REPLACE(id::text, '-', '') as id, owner_id,date_created, title, link,
       (
         SELECT COALESCE(array_to_json(array_agg(row_to_json(d))), '[]')
         FROM (
-          SELECT id, link, title, description, date_added
+          SELECT REPLACE(id::text, '-', '') as id, link, title, description, date_added, date_modified
           FROM feed_items
           WHERE feed_id=feeds.id
           ORDER BY date_added ASC
