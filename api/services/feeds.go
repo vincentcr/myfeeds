@@ -75,7 +75,9 @@ func (fs *Feeds) GetAllJson(user User) ([]byte, error) {
 }
 
 func (fs *Feeds) Create(user User, feed *Feed) error {
-	feed.ID = newID()
+	if feed.ID == "" {
+		feed.ID = newID()
+	}
 	feed.Link = fs.config.RootURL + "/feeds/" + string(feed.ID)
 	feed.ownerID = user.ID
 
@@ -128,9 +130,11 @@ func (fs *Feeds) Update(user User, feed *Feed) error {
 		return err
 	}
 
-	err = fs.replaceItems(user, feed.ID, feed.Items, tx)
-	if err != nil {
-		return err
+	if feed.Items != nil {
+		err = fs.replaceItems(user, feed.ID, feed.Items, tx)
+		if err != nil {
+			return err
+		}
 	}
 
 	return tx.Commit()

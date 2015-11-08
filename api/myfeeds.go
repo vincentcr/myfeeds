@@ -142,15 +142,16 @@ func routeFeeds(m *Mux) {
 
 	m.Put("/api/v1/feeds/:feedID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		feedID := services.RecordID(c.URLParams["feedID"])
-		feed := services.Feed{ID: feedID}
+		feed := services.Feed{}
 		if err := parseFeedRequest(r, &feed); err != nil {
 			panic(err)
 		}
+		feed.ID = feedID
 		err := c.Services.Feeds.Update(c.MustGetUser(), &feed)
 		if err != nil {
 			panic(err)
 		}
-		jsonify(feed, w)
+		w.WriteHeader(http.StatusNoContent)
 	}))
 
 	m.Delete("/api/v1/feeds/:feedID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
@@ -199,6 +200,7 @@ func routeFeeds(m *Mux) {
 }
 
 type FeedRequest struct {
+	ID          string
 	Title       string `validate:"nonzero,min=1"`
 	Description string
 	Items       []FeedItemRequest
@@ -209,13 +211,16 @@ func parseFeedRequest(r *http.Request, feed *services.Feed) error {
 	if err := parseAndValidate(r, &feedReq); err != nil {
 		return err
 	}
+	feed.ID = services.RecordID(feedReq.ID)
 	feed.Title = feedReq.Title
 	feed.Description = feedReq.Description
-	feed.Items = make([]services.FeedItem, 0, len(feedReq.Items))
-	for _, itemReq := range feedReq.Items {
-		var item services.FeedItem
-		copyFeedItemFromRequest(itemReq, &item)
-		feed.Items = append(feed.Items, item)
+	if feedReq.Items != nil {
+		feed.Items = make([]services.FeedItem, 0, len(feedReq.Items))
+		for _, itemReq := range feedReq.Items {
+			var item services.FeedItem
+			copyFeedItemFromRequest(itemReq, &item)
+			feed.Items = append(feed.Items, item)
+		}
 	}
 	return nil
 }
