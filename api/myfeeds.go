@@ -101,41 +101,6 @@ func routeUsers(m *Mux) {
 	}))
 }
 
-func parseAndValidate(r *http.Request, result interface{}) error {
-	if err := parseBody(r, result); err != nil {
-		return NewHttpError(http.StatusBadRequest)
-	}
-
-	if err := validator.Validate(result); err != nil {
-		return NewHttpError(http.StatusBadRequest)
-	}
-
-	return nil
-}
-
-func parseBody(r *http.Request, result interface{}) error {
-	decoder := json.NewDecoder(r.Body)
-	return decoder.Decode(result)
-}
-
-func jsonify(result interface{}, w http.ResponseWriter) {
-	bytes, err := json.Marshal(result)
-	if err != nil {
-		panic(err)
-	}
-
-	writeAs(w, "application/json", bytes)
-}
-
-func writeAs(w http.ResponseWriter, contentType string, bytes []byte) {
-	w.Header().Set("content-type", contentType)
-	_, err := w.Write(bytes)
-	if err != nil {
-		panic(err)
-	}
-
-}
-
 func routeFeeds(m *Mux) {
 	m.Get("/api/v1/feeds", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		feeds, err := c.Services.Feeds.GetAllJson(c.MustGetUser())
@@ -276,4 +241,39 @@ func copyFeedItemFromRequest(itemReq FeedItemRequest, item *services.FeedItem) {
 	item.Link = itemReq.Link
 	item.Title = itemReq.Title
 	item.Description = itemReq.Description
+}
+
+func parseAndValidate(r *http.Request, result interface{}) error {
+	if err := parseBody(r, result); err != nil {
+		return NewHttpError(http.StatusBadRequest)
+	}
+
+	if err := validator.Validate(result); err != nil {
+		return NewHttpError(http.StatusBadRequest)
+	}
+
+	return nil
+}
+
+func parseBody(r *http.Request, result interface{}) error {
+	decoder := json.NewDecoder(r.Body)
+	return decoder.Decode(result)
+}
+
+func jsonify(result interface{}, w http.ResponseWriter) {
+	bytes, err := json.Marshal(result)
+	if err != nil {
+		panic(err)
+	}
+
+	writeAs(w, "application/json", bytes)
+}
+
+func writeAs(w http.ResponseWriter, contentType string, bytes []byte) {
+	w.Header().Set("content-type", contentType)
+	_, err := w.Write(bytes)
+	if err != nil {
+		panic(err)
+	}
+
 }
