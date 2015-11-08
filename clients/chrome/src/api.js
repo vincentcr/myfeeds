@@ -1,5 +1,6 @@
 import Session from './session';
 import history from './history';
+import uuid from 'node-uuid';
 import 'whatwg-fetch';
 
 const API_BASE_URL = 'http://localhost:3000/api/v1';
@@ -175,32 +176,40 @@ export const Feeds = Api.create({
     return this._api.get(`/feeds/${feedID}`).then(res => res.json());
   },
 
+  create(title) {
+    const feed = {title, id:uuidgen(), items:[]};
+    return this._api.post('/feeds', {data:feed}).then(() => feed);
+  },
+
   save(feed) {
-    let method, url;
-    if (feed.id == null) {
+    return this._api.put(`/feeds/${feed.id}`, {data: feed});
+  },
+
+  delete(feed) {
+    return this._api.delete(`/feeds/${feed.id}`);
+  },
+
+  saveItem({feed, item}) {
+    let url, method;
+    if (item.id == null) {
       method = 'POST';
-      url = '/feeds';
+      url = `/feeds/${feed.id}/items`;
     } else {
       method = 'PUT';
-      url = `/feeds/${feed.id}`;
+      url = `/feeds/${feed.id}/items/${item.id}`;
     }
-
     return this._api
-      .send(url, {method, data: feed})
-      .then(res => res.json())
-      .then((savedFeed) => {
-        return savedFeed || feed;
-      })
-    ;
+      .send(url, {method, data: item})
+      .then(res => res.status === 204 ? item : res.json());
   },
 
-  remove(feedID) {
-    return this._api.delete(`/feeds/${feedID}`);
-  },
-
-  addItem(feedID, item) {
-    const url = `/feeds/${feedID}/items`;
-    return this._api.put(url, {data: item});
+  deleteItem({feed, item}) {
+    return this._api.delete(`/feeds/${feed.id}/items/${item.id}`);
   },
 
 });
+
+
+function uuidgen() {
+  return uuid.v4();
+}

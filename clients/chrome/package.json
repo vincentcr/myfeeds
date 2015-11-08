@@ -32,6 +32,8 @@
     "history": "^1.12.5",
     "jquery": "^2.1.4",
     "lodash": "^3.10.0",
+    "moment": "^2.10.6",
+    "node-uuid": "^1.4.3",
     "react": "^0.14.0",
     "react-dom": "^0.14.1",
     "react-redux": "^4.0.0",

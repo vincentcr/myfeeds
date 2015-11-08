@@ -1,7 +1,7 @@
 import React, {PropTypes} from 'react';
 import { Link } from 'react-router';
 import { connect } from 'react-redux';
-import { fetchFeedsIfNeeded } from '../actions';
+import { fetchFeedsIfNeeded, createFeed } from '../actions';
 import Session from '../session';
 import { Users } from '../api';
 
@@ -46,9 +46,9 @@ export default class FeedList extends React.Component {
               }
 
               {!isFetching &&
-                <ul className='nav nav-sidebar'>
+                <ul className='nav nav-sidebar navbar-nav feeds-sidebar'>
 
-                  <li>
+                  <li className={this.props.params.feedID == null ? 'active' : ''}>
                     <Link className='feed-link' to='/feeds'>
                       <span className='glyphicon glyphicon-home' aria-hidden='true'></span>
                       {' '}
@@ -57,13 +57,13 @@ export default class FeedList extends React.Component {
                   </li>
 
                   {feedNodes}
-                  <li role='separator' className='divider'><hr /></li>
-                  <li>
-                    <Link className='feed-link' to='/feeds/new'>
+                  <li className='feed-add-new'>
+                    <hr />
+                    <a href='#' onClick={e => this.handleCreateFeed(e)}>
                       <span className='glyphicon glyphicon-plus' aria-hidden='true'></span>
                       {' '}
                       add new feed
-                    </Link>
+                    </a>
                   </li>
                 </ul>
               }
@@ -86,8 +86,12 @@ export default class FeedList extends React.Component {
   }
 
   renderFeed(feed) {
+
+    const selected = this.props.params.feedID === feed.id;
+    const className = (selected) ? 'active' : undefined;
+
     return (
-      <li key={feed.id}>
+      <li key={feed.id} className={className}>
         <Link className='feed-link' to={`/feeds/${feed.id}`}>
           <span className='glyphicon glyphicon-th-list' aria-hidden='true'></span>
           {' '}
@@ -128,11 +132,11 @@ export default class FeedList extends React.Component {
 
   renderQuickAddDropdown(feeds) {
     const items = Object.values(feeds).map(feed =>
-      <option required={true} value={feed.id}>{feed.title}</option>
+      <option required={true} key={feed.id} value={feed.id}>{feed.title}</option>
     );
     return (
       <select>
-        <option value=''>[Select Feed]</option>
+        <option value='' key=''>[Select Feed]</option>
         {items}
       </select>
     );
@@ -190,4 +194,26 @@ export default class FeedList extends React.Component {
     Users.signout();
   }
 
+  handleCreateFeed(e) {
+    e.preventDefault();
+    const {dispatch} = this.props;
+    const title = this.defaultNewTitle();
+    dispatch(createFeed(title));
+  }
+
+  defaultNewTitle() {
+    const NEW_TITLE_PFX = 'New Feed ';
+    const {feeds} = this.props;
+    const extractor = new RegExp(`^${NEW_TITLE_PFX}(\\d+)$`);
+    const maxIdx = Math.max(...Object.values(feeds).map(({title}) => {
+      const match = extractor.exec(title);
+      if (match) {
+        return parseInt(match[1]);
+      } else {
+        return 0;
+      }
+    }));
+    const title = NEW_TITLE_PFX + (maxIdx + 1);
+    return title;
+  }
 }

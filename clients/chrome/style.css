@@ -12,6 +12,94 @@ img {
   height: 75px;
 }
 
+input:invalid {
+  border: 1px solid red;
+}
+
+#in-progress {
+  display: none;
+}
+#in-progress.active {
+  position: fixed;
+  display: block;
+  height: 10em;
+  width: 10em;
+  overflow: show;
+  margin: auto;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+
+@-moz-keyframes throbber-loader {
+  0% {
+    background: #dde2e7;
+  }
+  10% {
+    background: #6b9dc8;
+  }
+  40% {
+    background: #dde2e7;
+  }
+}
+@-webkit-keyframes throbber-loader {
+  0% {
+    background: #dde2e7;
+  }
+  10% {
+    background: #6b9dc8;
+  }
+  40% {
+    background: #dde2e7;
+  }
+}
+@keyframes throbber-loader {
+  0% {
+    background: #dde2e7;
+  }
+  10% {
+    background: #6b9dc8;
+  }
+  40% {
+    background: #dde2e7;
+  }
+}
+/* :not(:required) hides these rules from IE9 and below */
+.throbber-loader:not(:required) {
+  -moz-animation: throbber-loader 2000ms 300ms infinite ease-out;
+  -webkit-animation: throbber-loader 2000ms 300ms infinite ease-out;
+  animation: throbber-loader 2000ms 300ms infinite ease-out;
+  background: #dde2e7;
+  display: inline-block;
+  position: relative;
+  text-indent: -9999px;
+  width: 0.9em;
+  height: 1.5em;
+  margin: 0 1.6em;
+}
+.throbber-loader:not(:required):before, .throbber-loader:not(:required):after {
+  background: #dde2e7;
+  content: '\x200B';
+  display: inline-block;
+  width: 0.9em;
+  height: 1.5em;
+  position: absolute;
+  top: 0;
+}
+.throbber-loader:not(:required):before {
+  -moz-animation: throbber-loader 2000ms 150ms infinite ease-out;
+  -webkit-animation: throbber-loader 2000ms 150ms infinite ease-out;
+  animation: throbber-loader 2000ms 150ms infinite ease-out;
+  left: -1.6em;
+}
+.throbber-loader:not(:required):after {
+  -moz-animation: throbber-loader 2000ms 450ms infinite ease-out;
+  -webkit-animation: throbber-loader 2000ms 450ms infinite ease-out;
+  animation: throbber-loader 2000ms 450ms infinite ease-out;
+  right: -1.6em;
+}
+
 .sidebar {
   display: none;
 }
@@ -30,6 +118,7 @@ img {
     border-right: 1px solid #eee;
   }
 }
+
 
 .signin-form-container {
   position: relative;
@@ -50,23 +139,90 @@ img {
   content: "My Feeds Sign in";
 }
 
-/*.feed-list  {
-  list-style-type: none;
+.feeds-sidebar li {
+  display: block;
+  float: none;
 }
 
-.feed-list a {
-  margin-right: 0.2em;
+.feeds-sidebar li.feed-add-new  hr {
+  margin-top: 0.5em;
+  margin-bottom: 0;
 }
 
-.feed-list .feed-count {
-  font-size: 0.8em;
-  color: #666;
-}*/
+.feeds-sidebar li.active,
+.feeds-sidebar li:hover {
+  background-color: #e7e7e7;
+  color: white;
+  width:100%;
+}
+
+.feeds-sidebar .active a {
+  font-size: 1.1em;
+  color: #1c4466;
+}
 
 table.feed-item-table tbody tr td {
   vertical-align: middle;
+  cursor: default;
 }
 
-.link-cell a {
-  margin-left: 0.5em;
+table.feed-item-table tr.selected {
+  background-color: #f3f3f3;
+}
+table.feed-item-table tbody tr:hover,
+table.feed-item-table tbody tr.selected:hover {
+  background-color: #ddd;
+}
+
+.feed .feed-title {
+    background-color: #2b617b;
+    color: #fff;
+    padding-left: 1em;
+    margin-bottom: 1.5em;
+}
+
+.feed .feed-title h2 {
+  display: inline-block;
+}
+
+.feed .feed-title h2 input[type='text'] {
+  background-color: transparent;
+  border:none;
+  color: inherit;
+  font-size: inherit;
+  height:inherit;
+  padding:0;
+  box-shadow: none;
+}
+
+.feed .feed-title h2 input[type='text']:invalid {
+  border: 1px solid red;
+}
+
+
+.feed .feed-menu {
+  display: inline-block;
+  top: -5px;
+}
+
+.feed .feed-menu .dropdown-toggle {
+  background-color: transparent;
+  border:none;
+  color: #eee;
+}
+
+.feed-item-table a.item-link {
+  color: black;
+}
+
+table tbody tr.empty-feed {
+  padding: 1em;
+  text-align: center;
+}
+table tbody tr.empty-feed td {
+  cursor: text;
+}
+
+table tbody tr.empty-feed:hover {
+  background-color: inherit;
 }

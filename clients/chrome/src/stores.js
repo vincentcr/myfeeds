@@ -1,48 +1,69 @@
 import { createStore, applyMiddleware, combineReducers } from 'redux';
 import thunkMiddleware from 'redux-thunk';
 import createLoggerMiddleware from 'redux-logger';
-import {
-  FEEDS_FETCH_BEGIN,
-  FEEDS_FETCH_INVALIDATE,
-  FEEDS_FETCH_COMPLETE,
-  FEEDS_UPDATE,
-  FEED_CREATE,
-  FEED_SELECT,
-  FEED_EDIT_BEGIN,
-  FEED_EDIT_COMPLETE,
-  FEED_SAVE_BEGIN,
-  FEED_SAVE_COMPLETE,
-  FEED_ADD_ITEM,
-  FEED_INSERT_ITEM,
-  FEED_REMOVE_ITEM,
-} from './actionTypes';
+
+export const ASYNC_BEGIN = 'ASYNC_BEGIN';
+export const ASYNC_COMPLETE = 'ASYNC_COMPLETE';
+
+export const FEEDS_FETCH_INVALIDATE = 'FEEDS_FETCH_INVALIDATE';
+export const FEEDS_FETCH_COMPLETE = 'FEEDS_FETCH_COMPLETE';
+export const FEEDS_UPDATE = 'FEEDS_UPDATE';
+export const FEEDS_DELETE = 'FEEDS_DELETE';
+
+export const FEED_CREATE = 'FEED_CREATE';
+export const FEED_SELECT = 'FEED_SELECT';
+export const FEED_DESELECT = 'FEED_DESELECT';
+export const FEED_ADD = 'FEED_ADD';
+export const FEED_REMOVE = 'FEED_REMOVE';
+export const FEED_UPDATE = 'FEED_UPDATE';
+export const FEED_ITEM_ADD = 'FEED_ITEM_ADD';
+export const FEED_ITEM_UPDATE = 'FEED_ITEM_UPDATE';
+export const FEED_ITEM_INSERT = 'FEED_ITEM_INSERT';
+export const FEED_ITEM_DELETE = 'FEED_ITEM_DELETE';
 
 const INITIAL_STATE = Object.freeze({
+  asyncState: {
+    inProgress:false,
+  },
   feedList: {
-    isFetching: false,
     didInvalidate: true,
     feeds: {},
   },
   feed: {
     current: null,
     isEditing: false,
-    isSaving: false,
   },
 });
+
+function asyncState(state = INITIAL_STATE.asyncState, action) {
+  switch (action.type) {
+    case ASYNC_BEGIN:
+      return {...state, inProgress:true};
+    case ASYNC_COMPLETE:
+      return {...state, inProgress:false};
+    default:
+      return state;
+  }
+}
 
 function feedList(state = INITIAL_STATE.feedList, action) {
   console.log(`store:feedList:${action.type}`, {state, action});
   switch(action.type) {
     case FEEDS_FETCH_INVALIDATE:
       return {...state, didInvalidate:true};
-    case FEEDS_FETCH_BEGIN:
-      return {...state, isFetching:true};
     case FEEDS_FETCH_COMPLETE:
-      return {...state, err:action.err, feeds:toFeedMap(action.feeds), isFetching:false, didInvalidate:false};
-    case FEEDS_UPDATE:
-      const feed = action.feed;
+      return {...state, err:action.err, feeds:toFeedMap(action.feeds), didInvalidate:false};
+    case FEEDS_UPDATE: {
+      const {feed} = action;
       const feeds = {...state.feeds, [feed.id]:feed};
       return {...state, feeds:feeds};
+    }
+    case FEEDS_DELETE: {
+      const {feed} = action;
+      const feeds = {...state.feeds};
+      delete feeds[feed.id];
+      return {...state, feeds:feeds};
+    }
     default:
       return state;
   }
@@ -60,33 +81,39 @@ function feed(state = INITIAL_STATE.feed, action) {
   console.log(`store:feed:${action.type}`, {state, action});
   switch(action.type) {
     case FEED_CREATE:
-      return {...state, currentFeed:action.feed, origFeed:action.feed};
+      return {...state, feed:action.feed};
+    case FEED_DESELECT:
+      const deselect = {...state};
+      delete deselect.feed;
+      return deselect;
     case FEED_SELECT:
-      return {...state, currentFeed:action.feed, origFeed:action.feed};
-    case FEED_EDIT_BEGIN:
-      return {...state, isEditing:true};
-    case FEED_EDIT_COMPLETE:
-      return {...state, isEditing:false, currentFeed:action.feed};
-    case FEED_SAVE_BEGIN:
-      return {...state, isSaving:true};
-    case FEED_SAVE_COMPLETE:
-      return {...state, err:action.err, isSaving:false};
-    case FEED_ADD_ITEM: {
-      const items = state.currentFeed.items.concat(action.item);
-      const currentFeed = {...state.currentFeed, items};
-      return {...state, currentFeed};
+      return {...state, feed:action.feed};
+    case FEED_UPDATE:
+      return {...state, feed:action.feed};
+    case FEED_ITEM_ADD: {
+      const items = state.feed.items.concat(action.item);
+      const feed = {...state.feed, items};
+      return {...state, feed};
     }
-    case FEED_INSERT_ITEM: {
+    case FEED_ITEM_UPDATE: {
+      const {item} = action;
+      const items = state.feed.items
+        .filter(i => i.id !== item.id)
+        .concat(item);
+      const feed = {...state.feed, items};
+      return {...state, feed};
+    }
+    case FEED_ITEM_INSERT: {
       const {item, index} = action;
-      const items = [...state.currentFeed.items];
+      const items = [...state.feed.items];
       items.splice(index, 0, item);
-      const currentFeed = {...state.currentFeed, items};
-      return {...state, currentFeed};
+      const feed = {...state.feed, items};
+      return {...state, feed};
     }
-    case FEED_REMOVE_ITEM: {
-      const items = state.currentFeed.items.filter((item) => item != action.item);
-      const currentFeed = {...state.currentFeed, items};
-      return {...state, currentFeed};
+    case FEED_ITEM_DELETE: {
+      const items = state.feed.items.filter((item) => item != action.item);
+      const feed = {...state.feed, items};
+      return {...state, feed};
     }
     default:
       return state;
@@ -94,7 +121,7 @@ function feed(state = INITIAL_STATE.feed, action) {
 }
 
 
-const rootReducer = combineReducers({feedList, feed});
+const rootReducer = combineReducers({feedList, feed, asyncState});
 
 const createStoreWithMiddleware = applyMiddleware(
   thunkMiddleware,
