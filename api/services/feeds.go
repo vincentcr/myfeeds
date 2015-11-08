@@ -205,7 +205,7 @@ func (fs *Feeds) AddItem(user User, item *FeedItem) error {
 }
 
 func (fs *Feeds) UpdateItem(user User, item FeedItem) error {
-	res, err := fs.db.Exec("UPDATE feed_items set link=$1,title=$2,description=$3 WHERE id=$4 AND owner_id=$5",
+	res, err := fs.db.Exec("UPDATE feed_items set link=$1,title=$2,description=$3,date_modified=NOW() WHERE id=$4 AND owner_id=$5",
 		item.Link, item.Title, item.Description, item.ID, user.ID)
 	if err != nil {
 		return err

@@ -28,6 +28,7 @@ CREATE TABLE feed_items(
   feed_id uuid REFERENCES feeds(id) NOT NULL,
   owner_id uuid REFERENCES users(id) NOT NULL,
   date_added TIMESTAMP NOT NULL DEFAULT timeofday()::TIMESTAMP,
+  date_modified TIMESTAMP NOT NULL DEFAULT timeofday()::TIMESTAMP,
   link TEXT NOT NULL CHECK (link != ''),
   title TEXT NOT NULL CHECK (link != ''),
   description TEXT
