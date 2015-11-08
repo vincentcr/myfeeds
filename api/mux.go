@@ -84,42 +84,6 @@ func (mux *Mux) Head(pattern web.PatternType, h handler) {
 	})
 }
 
-// func (mux *Mux) get2(pattern web.PatternType, handlers ...handler2) {
-
-// 	goji.Get(pattern, func(c web.C, w http.ResponseWriter, r *http.Request) {
-// 		sc := &MyFeedsContext{c, mux.svc}
-
-// 		defer func() {
-
-// 			if err := recover(); err != nil {
-// 				var code int
-// 				var text string
-
-// 				if ar, ok := err.(AbortReason); ok {
-// 					code = ar.StatusCode
-// 					text = ar.StatusText
-// 				} else {
-// 					code = http.StatusInternalServerError
-// 					text = http.StatusText(code)
-// 					stack := debug.Stack()
-// 					log.Printf("Internal error: %s\n%s\n", err, stack)
-// 				}
-
-// 				http.Error(w, text, code)
-// 			}
-// 		}()
-
-// 		abort := func(reason AbortReason) {
-// 			panic(reason)
-// 		}
-
-// 		for _, h := range handlers {
-// 			h(sc, w, r, abort)
-// 		}
-
-// 	})
-// }
-
 func (mux *Mux) Get(pattern web.PatternType, h handler) {
 	goji.Get(pattern, func(c web.C, w http.ResponseWriter, r *http.Request) {
 		sc := &MyFeedsContext{c, mux.svc}
