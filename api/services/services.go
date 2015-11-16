@@ -23,7 +23,10 @@ var (
 )
 
 func New() (*Services, error) {
-	config := Config{RootURL: "http://localhost:3000"}
+	config, err := loadConfig()
+	if err != nil {
+		return nil, err
+	}
 
 	db, err := setupDB(config)
 	if err != nil {
@@ -50,30 +53,30 @@ func New() (*Services, error) {
 }
 
 func setupDB(config Config) (*sql.DB, error) {
-	connParams := "dbname=myfeeds_dev user=myfeeds_dev password=myfeeds_dev_secret sslmode=disable"
-	db, err := sql.Open("postgres", connParams)
+	url := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
+		config.Postgres.User, config.Postgres.Password, config.Postgres.Addr, config.Postgres.Database)
+	db, err := sql.Open("postgres", url)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create db driver with params %v: %v", connParams, err)
+		return nil, fmt.Errorf("unable to create db driver with params %v: %v", url, err)
 	}
 
 	_, err = db.Query("SELECT 1")
 	if err != nil {
-		return nil, fmt.Errorf("unable to connect to db with params %v: %v", connParams, err)
+		return nil, fmt.Errorf("unable to connect to db with params %v: %v", url, err)
 	}
 	return db, nil
 }
 
 func setupRedis(config Config) (*redis.Client, error) {
-	addr := "localhost:6379"
 	client := redis.NewClient(&redis.Options{
-		Addr:     addr,
+		Addr:     config.RedisAddr,
 		Password: "",
 		DB:       0,
 	})
 
 	_, err := client.Ping().Result()
 	if err != nil {
-		return nil, fmt.Errorf("unable to ping redis server at %v: %v", addr, err)
+		return nil, fmt.Errorf("unable to ping redis server at %v: %v", config.RedisAddr, err)
 	}
 	return client, nil
 }
