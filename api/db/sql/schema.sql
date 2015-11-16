@@ -36,5 +36,3 @@ CREATE TABLE feed_items(
 CREATE INDEX idx_feed_items_feed_id ON feed_items(feed_id);
 CREATE INDEX idx_feed_items_id_owner_id ON feed_items(id, owner_id);
 CREATE UNIQUE INDEX idx_feeds_id_url ON feed_items(id, link);
-
-\i views.sql

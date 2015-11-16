@@ -78,7 +78,7 @@ func (fs *Feeds) Create(user User, feed *Feed) error {
 	if feed.ID == "" {
 		feed.ID = newID()
 	}
-	feed.Link = fs.config.RootURL + "/feeds/" + string(feed.ID)
+	feed.Link = fs.config.PublicURL + "/feeds/" + string(feed.ID)
 	feed.ownerID = user.ID
 
 	tx, err := fs.db.Begin()

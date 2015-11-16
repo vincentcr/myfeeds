@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/vincentcr/myfeeds/api/services"
 	"github.com/vincentcr/validator"
@@ -11,7 +13,8 @@ import (
 func main() {
 	svc, err := services.New()
 	if err != nil {
-		panic(err.Error())
+		fmt.Fprintf(os.Stderr, "startup error: %v\n", err)
+		os.Exit(1)
 	}
 
 	setupServer(svc)
