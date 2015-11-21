@@ -8,10 +8,6 @@ api:
   environment: &environment
     ENV: dev
     API_PUBLIC_URL: "192.168.99.100"
-    DB_NAME: 'myfeeds_dev'
-    DB_USER: 'myfeeds_dev'
-    DB_PASSWD: 'myfeeds_dev_secret'
-
 redis:
   image: redis:3.0
 
@@ -19,6 +15,8 @@ postgres:
   build: db
   ports:
   - "5432:5432"
-  volumes:
-  - ~/.docker-data/myfeeds/postgresql/data:/var/lib/postgresql/data
-  environment: *environment
+  environment:
+    ENV: dev
+    DB_NAME: 'myfeeds_dev'
+    DB_USER: 'myfeeds_dev'
+    DB_PASSWD: 'kWd2XdJUhGPRo3XlxUcvYJAebCZvbieM'

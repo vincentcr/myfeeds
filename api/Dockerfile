@@ -12,4 +12,4 @@ ENV PORT=3456
 
 EXPOSE ${PORT}
 
-CMD sh- "sleep 1 && $APP_DIR/app :${PORT}"
+CMD sh -c "sleep 1 && $APP_DIR/app :${PORT}"
