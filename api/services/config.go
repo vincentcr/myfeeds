@@ -1,10 +1,8 @@
 package services
 
 import (
-	"fmt"
 	"log"
 	"os"
-	"strings"
 )
 
 type Config struct {
@@ -29,22 +27,12 @@ func loadConfig() (Config, error) {
 func loadConfigFromEnv() (Config, error) {
 	return Config{
 		PublicURL: os.Getenv("API_PUBLIC_URL"),
-		RedisAddr: getServiceAddress("redis", 6379),
+		RedisAddr: "redis:6379",
 		Postgres: PGConfig{
-			Addr:     getServiceAddress("postgres", 5432),
-			Database: os.Getenv("DB_NAME"),
-			User:     os.Getenv("DB_USER"),
-			Password: os.Getenv("DB_PASSWD"),
+			Addr:     "postgres:5432",
+			Database: os.Getenv("POSTGRES_ENV_DB_NAME"),
+			User:     os.Getenv("POSTGRES_ENV_DB_USER"),
+			Password: os.Getenv("POSTGRES_ENV_DB_PASSWD"),
 		},
 	}, nil
-}
-
-func getServiceAddress(name string, defaultPort int) string {
-	addr := os.Getenv(fmt.Sprintf("%v_PORT_%v_TCP_ADDR", strings.ToUpper(name), defaultPort))
-	port := os.Getenv(fmt.Sprintf("%v_PORT_%v_TCP_PORT", strings.ToUpper(name), defaultPort))
-	if addr == "" || port == "" {
-		return ""
-	} else {
-		return fmt.Sprintf("%v:%v", addr, port)
-	}
 }
