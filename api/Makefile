@@ -13,6 +13,16 @@ build: $(APP_NAME)
 $(APP_NAME): $(GO_SRC)
 	godep go build -o $(APP_NAME) .
 
+
+docker-build:
+	docker-compose build
+
+docker-run: docker-build
+	docker-compose stop
+	docker-compose up -d --force-recreate
+	DB_HOST=$(docker-machine ip default) make db-views
+	docker-compose logs
+
 dev: build db-views
 	./$(APP_NAME) -bind :3000
 
