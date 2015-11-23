@@ -92,8 +92,8 @@ export default class FeedItem extends React.Component {
     e.preventDefault();
     const {item, isModified} = this.state;
     if (isModified) {
-      const {dispatch} = this.props;
-      dispatch(saveFeedItem(item));
+      const {dispatch, feed} = this.props;
+      dispatch(saveFeedItem(feed, item));
     }
   }
 
@@ -115,8 +115,8 @@ export default class FeedItem extends React.Component {
     e.preventDefault();
     const {item} = this.state;
     if (window.confirm(`Delete feed item ${item.title}? This cannot be undone.`)) {
-      const {dispatch} = this.props;
-      dispatch(deleteFeedItem(item));
+      const {dispatch, feed} = this.props;
+      dispatch(deleteFeedItem(feed, item));
     }
   }
 }

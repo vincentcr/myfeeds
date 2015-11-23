@@ -3,7 +3,7 @@ import history from './history';
 import uuid from 'node-uuid';
 import 'whatwg-fetch';
 
-const API_BASE_URL = 'http://localhost:3000/api/v1';
+const API_BASE_URL = 'http://192.168.99.100:3456/api/v1';
 const MIME_JSON = 'application/json';
 const DEFAULT_HEADERS = Object.freeze({
   'accept': MIME_JSON,

@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { fetchFeedsIfNeeded, createFeed } from '../actions';
 import Session from '../session';
 import { Users } from '../api';
+import Home from './home.jsx';
 
 @connect(state => state.feedList)
 export default class FeedList extends React.Component {
@@ -28,11 +29,11 @@ export default class FeedList extends React.Component {
   }
 
   render() {
-    const { feeds, isFetching, children, err } = this.props;
+    const { feeds, isFetching, children, dispatch, err } = this.props;
     const feedNodes = Object.values(feeds).map(feed => this.renderFeed(feed));
     const userMenu = this.renderUserMenu();
 
-    const content = children != null ? children : this.renderDefaultContent(feeds);
+    const content = children != null ? children : <Home feeds={feeds} dispatch={dispatch} />;
 
     return (
       <div>
@@ -98,47 +99,6 @@ export default class FeedList extends React.Component {
           {feed.title}
         </Link>
       </li>
-    );
-  }
-
-  renderDefaultContent(feeds) {
-    return this.renderQuickAddItem(feeds);
-  }
-
-  renderQuickAddItem(feeds) {
-    const dropdown = this.renderQuickAddDropdown(feeds);
-    return (
-      <form className='form-inline'>
-        <div className='form-group'>
-          <label htmlFor='quick-add-title' className='sr-only'>Name</label>
-          {' '}
-          <input type='text' className='form-control' id='quick-add-title' placeholder='title' />
-        </div>
-        {' '}
-        <div className='form-group'>
-          <label htmlFor='quick-add-url' className='sr-only'>Email</label> {' '}
-          <input type='url' className='form-control' id='quick-add-url' placeholder='http://' />
-        </div>
-        {' '}
-        <div className='form-group'>
-          {dropdown}
-        </div>
-        {' '}
-        <button type='submit' className='btn btn-default'>Add Feed Item</button>
-      </form>
-
-    );
-  }
-
-  renderQuickAddDropdown(feeds) {
-    const items = Object.values(feeds).map(feed =>
-      <option required={true} key={feed.id} value={feed.id}>{feed.title}</option>
-    );
-    return (
-      <select>
-        <option value='' key=''>[Select Feed]</option>
-        {items}
-      </select>
     );
   }
 

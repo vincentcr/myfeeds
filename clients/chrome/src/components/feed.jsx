@@ -56,7 +56,7 @@ export default class Feed extends React.Component {
         }
         {feed &&
           <div>
-            <div className='row feed-title'>
+            <div className='row titlebar'>
               <div className='col-md12'>
                 {this.renderTitleBar(feed)}
               </div>
@@ -97,7 +97,6 @@ export default class Feed extends React.Component {
         </div>
       </div>
     );
-
   }
 
   renderTitle(feed) {
@@ -108,7 +107,6 @@ export default class Feed extends React.Component {
       const button = e.target.form.querySelector('button');
       setTimeout(() => button.click(), 0);
     }
-
 
     return (
       <h2 className='title'>

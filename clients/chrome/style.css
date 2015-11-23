@@ -13,7 +13,11 @@ img {
 }
 
 input:invalid {
-  border: 1px solid red;
+  border: 1px solid #9f3131;
+}
+
+.feed .feed-title h2 input[type='text']:invalid {
+  border: 1px solid #9f3131;
 }
 
 #in-progress {
@@ -174,29 +178,27 @@ table.feed-item-table tbody tr.selected:hover {
   background-color: #ddd;
 }
 
-.feed .feed-title {
+.main .titlebar {
     background-color: #2b617b;
     color: #fff;
     padding-left: 1em;
     margin-bottom: 1.5em;
 }
 
-.feed .feed-title h2 {
+.feed .titlebar h2 {
   display: inline-block;
 }
 
-.feed .feed-title h2 input[type='text'] {
+.feed .titlebar h2 input[type='text'] {
   background-color: transparent;
   border:none;
   color: inherit;
   font-size: inherit;
   height:inherit;
+  line-height: inherit;
+  margin: 0;
   padding:0;
   box-shadow: none;
-}
-
-.feed .feed-title h2 input[type='text']:invalid {
-  border: 1px solid red;
 }
 
 

@@ -151,38 +151,37 @@ export function moveFeedItem(item, newIndex) {
   };
 }
 
-export function saveFeedItem(item) {
-  return (dispatch, getState) => {
-    const {feed} = getState().feed;
+export function saveFeedItem(feed, item) {
+  return (dispatch) => {
     const isNew = item.id == null;
     const origItem = feed.items.find(i => i.id === item.id);
     dispatch(asyncBegin());
     return Feeds.saveItem({feed, item})
       .then(item => {
-        updateFeedItem({dispatch, item});
+        updateFeedItem({dispatch, feed, item});
         if (isNew) {
           history.replaceState(null, `/feeds/${feed.id}/items/${item.id}`);
         }
       })
       .catch(err => {
         console.log('error', err);
-        updateFeedItem({dispatch, origItem});
+        if (origItem != null) {
+          updateFeedItem({dispatch, feed, item:origItem});
+        }
         return {err};
       })
       .then(res => dispatch(asyncComplete(res)));
   };
 }
 
-function updateFeedItem({dispatch, item}) {
-    dispatch({type: FEED_ITEM_UPDATE, item});
+function updateFeedItem({dispatch, feed, item}) {
+    dispatch({type: FEED_ITEM_UPDATE, item, feed});
 }
 
-export function deleteFeedItem(item) {
-  return (dispatch, getState) => {
-    const {feed} = getState().feed;
-
+export function deleteFeedItem(feed, item) {
+  return (dispatch) => {
     return Feeds.deleteItem({feed, item}).then(() => {
-      dispatch({type:FEED_ITEM_DELETE, item});
+      dispatch({type:FEED_ITEM_DELETE, feed, item});
       history.replaceState(null, `/feeds/${feed.id}`);
     });
   };

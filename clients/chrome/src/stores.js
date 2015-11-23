@@ -96,12 +96,12 @@ function feed(state = INITIAL_STATE.feed, action) {
       return {...state, feed};
     }
     case FEED_ITEM_UPDATE: {
-      const {item} = action;
-      const items = state.feed.items
+      const {item, feed} = action;
+      const items = feed.items
         .filter(i => i.id !== item.id)
         .concat(item);
-      const feed = {...state.feed, items};
-      return {...state, feed};
+      const updatedFeed = {...state.feed, items};
+      return {...state, feed:updatedFeed};
     }
     case FEED_ITEM_INSERT: {
       const {item, index} = action;
@@ -111,9 +111,10 @@ function feed(state = INITIAL_STATE.feed, action) {
       return {...state, feed};
     }
     case FEED_ITEM_DELETE: {
-      const items = state.feed.items.filter((item) => item != action.item);
-      const feed = {...state.feed, items};
-      return {...state, feed};
+      const {item, feed} = action;
+      const items = feed.items.filter(i => i != item);
+      const updatedFeed = {...feed, items};
+      return {...state, feed:updatedFeed};
     }
     default:
       return state;
