@@ -10,6 +10,8 @@ api:
     API_PUBLIC_URL: "192.168.99.100"
 redis:
   image: redis:3.0
+  ports:
+  - "6379:6379"
 
 postgres:
   build: db

@@ -193,8 +193,9 @@ func routeFeeds(m *Mux) {
 	}))
 
 	m.Delete("/api/v1/feeds/:feedID/items/:itemID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
+		feedID := services.RecordID(c.URLParams["feedID"])
 		itemID := services.RecordID(c.URLParams["itemID"])
-		err := c.Services.Feeds.DeleteItem(c.MustGetUser(), itemID)
+		err := c.Services.Feeds.DeleteItem(c.MustGetUser(), feedID, itemID)
 		if err != nil {
 			panic(err)
 		}

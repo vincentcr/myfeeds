@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	"log"
+	"time"
+
+	"github.com/OneOfOne/xxhash"
 
 	"gopkg.in/redis.v3"
 )
@@ -36,42 +40,101 @@ func newFeeds(config Config, db *sql.DB, redisClient *redis.Client) (*Feeds, err
 	return &Feeds{config, db, redisClient}, nil
 }
 
+type feedCacheHint struct {
+	user User
+	id   RecordID
+}
+
 func (fs *Feeds) GetJson(user User, id RecordID) ([]byte, error) {
-	var feedJson []byte
-	err := fs.db.
-		QueryRow("SELECT json FROM feed_json WHERE id=$1 and owner_id=$2", id, user.ID).
-		Scan(&feedJson)
-	if err == sql.ErrNoRows {
-		return nil, ErrNotFound
-	} else if err != nil {
-		return nil, fmt.Errorf("Error fetching feed %v: %v", id, err)
-	} else {
-		return feedJson, nil
-	}
+	return fs.getCachedQuery(feedCacheHint{user, id}, "SELECT json FROM feed_json WHERE id=$1 and owner_id=$2", id, user.ID)
 }
 
 func (fs *Feeds) GetRss(user User, id RecordID) ([]byte, error) {
-	var feedXml string
-	err := fs.db.QueryRow("SELECT xml FROM feeds_xml WHERE id=$1 and owner_id=$2", id, user.ID).
-		Scan(&feedXml)
-	if err == sql.ErrNoRows {
-		return nil, ErrNotFound
-	} else if err != nil {
-		return nil, fmt.Errorf("Error fetching feed %v: %v", id, err)
-	} else {
-		return []byte(feedXml), nil
-	}
+	return fs.getCachedQuery(feedCacheHint{user, id}, "SELECT xml FROM feeds_xml WHERE id=$1 and owner_id=$2", id, user.ID)
 }
 
 func (fs *Feeds) GetAllJson(user User) ([]byte, error) {
-	var feedsJson []byte
-	err := fs.db.QueryRow("SELECT json FROM feeds_json WHERE owner_id=$1", user.ID).
-		Scan(&feedsJson)
+	return fs.getCachedQuery(feedCacheHint{user: user}, "SELECT json FROM feeds_json WHERE owner_id=$1", user.ID)
+}
+
+func (fs *Feeds) getCachedQuery(cacheHint feedCacheHint, query string, args ...interface{}) ([]byte, error) {
+	cacheKey := makeCacheKey(query, args)
+	data, err := fs.getFromCache(cacheKey)
 	if err != nil {
-		return nil, fmt.Errorf("Error fetching feeds for %v: %v", user.ID, err)
+		return nil, err
+	} else if data != nil {
+		return data, nil
+	}
+	data, err = fs.getFromDB(query, args)
+	if err != nil {
+		return nil, err
 	}
 
-	return feedsJson, nil
+	if err := fs.addToCache(cacheKey, data, 2*time.Hour, cacheHint); err != nil {
+		return nil, err
+	}
+	return data, err
+}
+
+func makeCacheKey(query string, args []interface{}) string {
+	h := xxhash.NewS64(0XBABE)
+	h.Write([]byte(query))
+	for _, arg := range args {
+		h.Write([]byte{0})
+		h.Write([]byte(fmt.Sprintf("%v", arg)))
+	}
+	return fmt.Sprintf("query.%v", h.Sum64())
+}
+
+func (fs *Feeds) getFromCache(cacheKey string) ([]byte, error) {
+	json, err := fs.redis.Get(cacheKey).Result()
+	if err == redis.Nil {
+		return nil, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("error fetching feed from cache with key %v: %v", cacheKey, err)
+	} else {
+		return []byte(json), nil
+	}
+}
+
+func (fs *Feeds) addToCache(cacheKey string, data []byte, expiration time.Duration, cacheHint feedCacheHint) error {
+	_, err := fs.redis.Pipelined(func(pipe *redis.Pipeline) error {
+		pipe.SetNX(cacheKey, string(data), expiration)
+		rkey := reverseMapCacheKey(cacheHint)
+		pipe.SAdd(rkey, cacheKey)
+		return nil
+	})
+	return err
+}
+
+func reverseMapCacheKey(cacheHint feedCacheHint) string {
+	return "feed_rkeys." + string(cacheHint.user.ID) + "." + string(cacheHint.id)
+}
+
+func (fs *Feeds) getFromDB(query string, args []interface{}) ([]byte, error) {
+	var results []byte
+	err := fs.db.QueryRow(query, args...).Scan(&results)
+	if err == sql.ErrNoRows {
+		return nil, ErrNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("Error fetching from db with query %v, args %v: %v", query, args, err)
+	} else {
+		return results, nil
+	}
+}
+
+func (fs *Feeds) invalidateFeedCache(cacheHint feedCacheHint) error {
+
+	rkeys := []string{reverseMapCacheKey(cacheHint), reverseMapCacheKey(feedCacheHint{user: cacheHint.user})}
+
+	_, err := fs.redis.Pipelined(func(pipe *redis.Pipeline) error {
+		for _, rkey := range rkeys {
+			keys := pipe.SMembers(rkey).Val()
+			pipe.Del(keys...)
+		}
+		return nil
+	})
+	return err
 }
 
 func (fs *Feeds) Create(user User, feed *Feed) error {
@@ -102,6 +165,8 @@ func (fs *Feeds) Create(user User, feed *Feed) error {
 		return err
 	}
 
+	fs.invalidateFeedCache(feedCacheHint{user, feed.ID})
+
 	return tx.Commit()
 }
 
@@ -110,6 +175,7 @@ func (fs *Feeds) Delete(user User, feedID RecordID) error {
 	if err != nil {
 		return err
 	}
+	fs.invalidateFeedCache(feedCacheHint{user, feedID})
 	return checkRowsAffected(res, 1)
 }
 
@@ -136,6 +202,7 @@ func (fs *Feeds) Update(user User, feed *Feed) error {
 			return err
 		}
 	}
+	fs.invalidateFeedCache(feedCacheHint{user, feed.ID})
 
 	return tx.Commit()
 }
@@ -200,6 +267,7 @@ func (fs *Feeds) AddItem(user User, item *FeedItem) error {
 	items := []FeedItem{*item}
 	err = fs.addItems(user, item.FeedID, items, tx)
 	*item = items[0]
+	fs.invalidateFeedCache(feedCacheHint{user, item.FeedID})
 
 	return tx.Commit()
 }
@@ -210,14 +278,17 @@ func (fs *Feeds) UpdateItem(user User, item FeedItem) error {
 	if err != nil {
 		return err
 	}
+	fs.invalidateFeedCache(feedCacheHint{user, item.FeedID})
+
 	return checkRowsAffected(res, 1)
 }
 
-func (fs *Feeds) DeleteItem(user User, itemID RecordID) error {
+func (fs *Feeds) DeleteItem(user User, feedID RecordID, itemID RecordID) error {
 	res, err := fs.db.Exec("DELETE FROM feed_items WHERE id=$1 AND owner_id=$2", itemID, user.ID)
 	if err != nil {
 		return err
 	}
+	fs.invalidateFeedCache(feedCacheHint{user, feedID})
 	return checkRowsAffected(res, 1)
 }
 
@@ -230,4 +301,15 @@ func checkRowsAffected(res sql.Result, expected int64) error {
 		return fmt.Errorf("Unexpected result: expected %v, got %v", expected, actual)
 	}
 	return nil
+}
+
+func trace(label string) (string, time.Time) {
+	log.Printf("START:%s...", label)
+	return label, time.Now()
+}
+
+func un(label string, startTime time.Time) {
+	endTime := time.Now()
+	elapsed := endTime.Sub(startTime)
+	log.Printf("  END:%s => %.4fms", label, elapsed.Seconds()*1000)
 }
