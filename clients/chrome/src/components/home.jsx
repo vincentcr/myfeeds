@@ -53,6 +53,7 @@ export default class Home extends React.Component {
         <div className='form-group'>
           {feedSelection}
         </div>
+
         {' '}
         <button type='submit' className='btn btn-default' disabled={!valid}>
           <span className='glyphicon glyphicon-plus' aria-hidden='true'></span>
@@ -97,13 +98,12 @@ export default class Home extends React.Component {
 
     return (
       <div className="feed-select dropdown">
-        <button className="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1"
-          data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"
-        >
+        <button className="btn btn-default dropdown-toggle" type="button" id="quick-add-select-feed"
+          data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
           {title + ' '}
           <span className="caret"></span>
         </button>
-        <ul className="dropdown-menu" aria-labelledby="dropdownMenu1">
+        <ul className="dropdown-menu" aria-labelledby="quick-add-select-feed">
           {items}
         </ul>
       </div>
