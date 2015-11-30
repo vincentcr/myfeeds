@@ -11,10 +11,7 @@ import {
   FEED_SELECT,
   FEED_DESELECT,
   FEED_UPDATE,
-  FEED_ITEM_ADD,
-  FEED_ITEM_INSERT,
   FEED_ITEM_DELETE,
-  FEED_ITEM_UPDATE,
 } from './stores';
 
 function asyncBegin() {
@@ -139,18 +136,6 @@ function updateFeed({dispatch, feed}) {
   dispatch({type:FEEDS_UPDATE, feed});
 }
 
-export function addFeedItem() {
-  const item = { key: 'new-feed-item-' + Date.now() };
-  return {type: FEED_ITEM_ADD, item};
-}
-
-export function moveFeedItem(item, newIndex) {
-  return (dispatch) => {
-    dispatch(deleteFeedItem(item));
-    dispatch({type: FEED_ITEM_INSERT, item, index:newIndex});
-  };
-}
-
 export function saveFeedItem(feed, item) {
   return (dispatch) => {
     const isNew = item.id == null;
@@ -175,7 +160,11 @@ export function saveFeedItem(feed, item) {
 }
 
 function updateFeedItem({dispatch, feed, item}) {
-    dispatch({type: FEED_ITEM_UPDATE, item, feed});
+      const items = feed.items
+        .filter(i => i.id !== item.id)
+        .concat(item);
+      const updatedFeed = {...feed, items};
+      updateFeed({dispatch, feed:updatedFeed});
 }
 
 export function deleteFeedItem(feed, item) {

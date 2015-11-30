@@ -16,9 +16,6 @@ export const FEED_DESELECT = 'FEED_DESELECT';
 export const FEED_ADD = 'FEED_ADD';
 export const FEED_REMOVE = 'FEED_REMOVE';
 export const FEED_UPDATE = 'FEED_UPDATE';
-export const FEED_ITEM_ADD = 'FEED_ITEM_ADD';
-export const FEED_ITEM_UPDATE = 'FEED_ITEM_UPDATE';
-export const FEED_ITEM_INSERT = 'FEED_ITEM_INSERT';
 export const FEED_ITEM_DELETE = 'FEED_ITEM_DELETE';
 
 const INITIAL_STATE = Object.freeze({
@@ -90,26 +87,6 @@ function feed(state = INITIAL_STATE.feed, action) {
       return {...state, feed:action.feed};
     case FEED_UPDATE:
       return {...state, feed:action.feed};
-    case FEED_ITEM_ADD: {
-      const items = state.feed.items.concat(action.item);
-      const feed = {...state.feed, items};
-      return {...state, feed};
-    }
-    case FEED_ITEM_UPDATE: {
-      const {item, feed} = action;
-      const items = feed.items
-        .filter(i => i.id !== item.id)
-        .concat(item);
-      const updatedFeed = {...state.feed, items};
-      return {...state, feed:updatedFeed};
-    }
-    case FEED_ITEM_INSERT: {
-      const {item, index} = action;
-      const items = [...state.feed.items];
-      items.splice(index, 0, item);
-      const feed = {...state.feed, items};
-      return {...state, feed};
-    }
     case FEED_ITEM_DELETE: {
       const {item, feed} = action;
       const items = feed.items.filter(i => i != item);
