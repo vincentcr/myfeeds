@@ -136,18 +136,16 @@ function updateFeed({dispatch, feed}) {
   dispatch({type:FEEDS_UPDATE, feed});
 }
 
-export function saveFeedItem(feed, item) {
+export function saveFeedItem(feed, item, done = () => null) {
   return (dispatch) => {
-    const isNew = item.id == null;
     const origItem = feed.items.find(i => i.id === item.id);
     dispatch(asyncBegin());
     return Feeds.saveItem({feed, item})
       .then(item => {
         updateFeedItem({dispatch, feed, item});
-        if (isNew) {
-          history.replaceState(null, `/feeds/${feed.id}/items/${item.id}`);
-        }
+        return item;
       })
+      .then(done)
       .catch(err => {
         console.log('error', err);
         if (origItem != null) {
@@ -160,6 +158,7 @@ export function saveFeedItem(feed, item) {
 }
 
 function updateFeedItem({dispatch, feed, item}) {
+      console.log('updateFeedItem', feed, item)
       const items = feed.items
         .filter(i => i.id !== item.id)
         .concat(item);

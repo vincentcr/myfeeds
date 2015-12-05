@@ -1,6 +1,7 @@
 import React from 'react';
 import moment from 'moment';
 import { connect } from 'react-redux';
+import history from '../history';
 import {
   saveFeedItem,
   deleteFeedItem,
@@ -33,13 +34,16 @@ export default class FeedItem extends React.Component {
       } else {
         item = itemID != null ? feed.items.find((item) => item.id === itemID) : { };
       }
-      this.setState({itemID, item, isModified:isNew});
+      this.setState({itemID, item, isNew, isModified:isNew});
     }
   }
 
   render() {
-    const {item, isModified} = this.state;
-    if (item == null) {
+    const {item, isModified,itemID} = this.state;
+    if (itemID == null) {
+      return <div></div>;
+    }
+    else if (item == null) {
       return <div>loading...</div>;
     }
     const lastModified = moment(item.date_modified).format('YYYY-MM-DD HH:mm:ss');
@@ -90,10 +94,14 @@ export default class FeedItem extends React.Component {
 
   handleSave(e) {
     e.preventDefault();
-    const {item, isModified} = this.state;
+    const {item, isModified, isNew} = this.state;
     if (isModified) {
       const {dispatch, feed} = this.props;
-      dispatch(saveFeedItem(feed, item));
+      dispatch(saveFeedItem(feed, item, (savedItem) => {
+        if (isNew) { //update url
+          history.replaceState(null, `/feeds/${feed.id}/items/${savedItem.id}`);
+        }
+      }));
     }
   }
 
