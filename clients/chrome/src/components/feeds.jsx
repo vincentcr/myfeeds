@@ -24,10 +24,6 @@ export default class FeedList extends React.Component {
     dispatch(fetchFeedsIfNeeded());
   }
 
-  handleAddNew() {
-    this.context.history.replaceState(null, '/feeds/new');
-  }
-
   render() {
     const { feeds, isFetching, children, dispatch, err } = this.props;
     const feedNodes = Object.values(feeds).map(feed => this.renderFeed(feed));

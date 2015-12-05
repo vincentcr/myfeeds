@@ -33,7 +33,6 @@ export default class Feed extends React.Component {
     const newFeedID = props.params.feedID;
     const {feedID} = this.state;
     if (newFeedID !== feedID) {
-      console.log(`loadFeed:${newFeedID}; current:${feedID}`);
       const {dispatch} = this.props;
       this.setState({feedID:newFeedID});
       dispatch(fetchCurrentFeedIfNeeded(newFeedID));
