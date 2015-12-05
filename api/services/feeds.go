@@ -124,17 +124,27 @@ func (fs *Feeds) getFromDB(query string, args []interface{}) ([]byte, error) {
 }
 
 func (fs *Feeds) invalidateFeedCache(cacheHint feedCacheHint) error {
-
 	rkeys := []string{reverseMapCacheKey(cacheHint), reverseMapCacheKey(feedCacheHint{user: cacheHint.user})}
-
-	_, err := fs.redis.Pipelined(func(pipe *redis.Pipeline) error {
-		for _, rkey := range rkeys {
-			keys := pipe.SMembers(rkey).Val()
-			pipe.Del(keys...)
-		}
-		return nil
-	})
-	return err
+	script := `
+		local num_deleted = 0;
+		for i=1, #KEYS do
+	    local keys = redis.call('smembers', KEYS[i]);
+	    if table.getn(keys) > 0 then
+	      num_deleted = num_deleted + redis.call('del', unpack(keys));
+	      redis.call('del', KEYS[i]);
+	    else
+	    end
+		end
+	  return num_deleted;
+	`
+	ret, err := fs.redis.Eval(script, rkeys, nil).Result()
+	if err != nil {
+		log.Printf("failed redis clear cache with rkeys=%v, script=%v", rkeys, script)
+		return fmt.Errorf("failed to delete cached keys in %v: %v", rkeys, err)
+	} else {
+		log.Printf("invalidated %v cache entries for %v", ret, cacheHint)
+	}
+	return nil
 }
 
 func (fs *Feeds) Create(user User, feed *Feed) error {
