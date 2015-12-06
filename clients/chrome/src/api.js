@@ -166,6 +166,11 @@ export const Users = Api.create({
 
 export const Feeds = Api.create({
 
+  rssUrl(feedID) {
+    const token = Session.get('token'); //TODO: server should provide readonly tokens for this
+    return `${baseUrl}/feeds/${feedID}/rss?_auth_token=${token}`;
+  },
+
   getAll() {
     return this._api.get('/feeds').then(res => res.json());
   },

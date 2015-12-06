@@ -228,3 +228,12 @@ table tbody tr.empty-feed td {
 table tbody tr.empty-feed:hover {
   background-color: inherit;
 }
+
+table.feeds-summary {
+  width: auto;
+}
+
+table.feeds-summary td {
+  padding-right: 5px;
+  padding-bottom: 5px;
+}
