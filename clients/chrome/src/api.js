@@ -126,12 +126,7 @@ function isJSON(contentType) {
 
 export const Users = Api.create({
   signup(creds) {
-    return this._api.post('/users', {
-      auth: {
-        scheme: 'basic',
-        creds: creds,
-      },
-    })
+    return this._api.post('/users', { data: creds  })
     .then(res => res.json())
     .then(userData => Session.set(userData))
     ;
@@ -192,14 +187,14 @@ export const Feeds = Api.create({
     return this._api.delete(`/feeds/${feed.id}`);
   },
 
-  saveItem({feed, item}) {
+  saveItem({feedID, item}) {
     let url, method;
     if (item.id == null) {
       method = 'POST';
-      url = `/feeds/${feed.id}/items`;
+      url = `/feeds/${feedID}/items`;
     } else {
       method = 'PUT';
-      url = `/feeds/${feed.id}/items/${item.id}`;
+      url = `/feeds/${feedID}/items/${item.id}`;
     }
     return this._api
       .send(url, {method, data: item})

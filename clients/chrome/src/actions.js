@@ -140,7 +140,7 @@ export function saveFeedItem(feed, item, done = () => null) {
   return (dispatch) => {
     const origItem = feed.items.find(i => i.id === item.id);
     dispatch(asyncBegin());
-    return Feeds.saveItem({feed, item})
+    return Feeds.saveItem({feedID:feed.id, item})
       .then(item => {
         updateFeedItem({dispatch, feed, item});
         return item;
@@ -158,7 +158,6 @@ export function saveFeedItem(feed, item, done = () => null) {
 }
 
 function updateFeedItem({dispatch, feed, item}) {
-      console.log('updateFeedItem', feed, item)
       const items = feed.items
         .filter(i => i.id !== item.id)
         .concat(item);

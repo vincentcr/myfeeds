@@ -15,10 +15,8 @@ export default class Signin extends React.Component {
   handleSubmit(e) {
     e.preventDefault();
 
-    const email = React.findDOMNode(this.refs.email).value.trim();
-    const password = React.findDOMNode(this.refs.password).value.trim();
+    const {email, password} = this.state;
     const method = document.activeElement.name || 'signin';
-
     Users[method]({email, password}).then(() => {
       const {location} = this.props;
       const redirectPath = (location.state && location.state.next) ? location.state.next : SUCCESS_REDIRECT_PATH;
@@ -37,12 +35,16 @@ export default class Signin extends React.Component {
 
           <div className="form-group">
             <label htmlFor="email">email</label>
-            <input type="email" className="form-control" id="email" ref='email' placeholder="email" />
+            <input type='email' className='form-control' id='email' required='required' value={this.state.email} placeholder='email'
+              onChange={(e) => this.handleOnChange('email', e)}
+            />
           </div>
 
           <div className="form-group">
             <label htmlFor="password">Password</label>
-            <input type="password" className="form-control" id="password" ref='password' placeholder="password" />
+            <input type='password' className='form-control' id='password' required='required' value={this.state.password} placeholder='password'
+              onChange={(e) => this.handleOnChange('password', e)}
+            />
           </div>
 
           <input type='submit' className='btn btn-default' value='sign in' name='signin' />
@@ -58,4 +60,9 @@ export default class Signin extends React.Component {
       </div>
     );
   }
+
+  handleOnChange(field, e) {
+    this.setState({isModified:true, [field] : e.target.value.trim() });
+  }
+
 }

@@ -32,7 +32,7 @@ class Routes extends React.Component {
   render() {
     return (
       <Router history={history}>
-        <Route path='/' component={App}>
+        <Route path='/' component={App} onEnter={this.checkAccess}>
           <IndexRoute component={FeedList} />
           <Route path='signin' name='signin' onEnter={this.checkAccess} component={Signin}/>
           <Route path='feeds' name='feeds'  onEnter={this.checkAccess} component={FeedList}>
@@ -63,7 +63,6 @@ class Routes extends React.Component {
     if (redirect != null) {
       replaceState(redirect.query, redirect.path);
     }
-
   }
 }
 

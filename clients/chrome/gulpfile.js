@@ -14,18 +14,31 @@ if (null == process.env['NODE_ENV']) {
   process.env['NODE_ENV'] = 'development';
 }
 
-var SRC_DIR      = './src'
-var ENTRY_POINT  = SRC_DIR + '/index.js';
-var OUT_DIR      = './assets';
-var JS_OUT       = OUT_DIR + '/index.js'
-var IS_PRODUCTION = 'production' === process.env['NODE_ENV'];
 
-function compile(watch) {
+var SRC_DIR             = './src'
+var OUT_DIR             = './assets';
+var DEFAULT_ENTRY_POINT = 'app.js';
+var IS_PRODUCTION       = 'production' === process.env['NODE_ENV'];
+
+
+function compiler(entryPoint, watch) {
+  return function() {
+    return compile(entryPoint, watch);
+  }
+}
+
+function compile(entryPoint, watch) {
   updateRuntimeConfig();
+  if (entryPoint == null) {
+    entryPoint = DEFAULT_ENTRY_POINT;
+  }
+  var target = path.join(OUT_DIR, entryPoint);
 
-  var bundler = watchify(browserify(ENTRY_POINT, { debug: true }).transform(babel));
+  console.log('compile', entryPoint)
+
+  var bundler = watchify(browserify(path.join(SRC_DIR, entryPoint), { debug: true }).transform(babel));
   if (IS_PRODUCTION) {
-    bundler.plugin('minifyify', { output: OUT_DIR + '/map.json'  });
+    bundler.plugin('minifyify', { output: path.join(OUT_DIR, 'map.json')  });
   }
 
   function rebundle() {
@@ -33,7 +46,7 @@ function compile(watch) {
     gutil.log('bundling... →');
     return bundler.bundle()
       .on('error', errorHandler(bundler))
-      .pipe(source(JS_OUT))
+      .pipe(source(target))
       .on('error', errorHandler(bundler))
       .pipe(buffer())
       .on('error', errorHandler(bundler))
@@ -74,11 +87,13 @@ function errorHandler(stream) {
   }
 }
 
-function watch() {
-  return compile(true);
+function watcher(entryPoint) {
+  return function() {
+    return compile(entryPoint, true);
+  }
 };
 
-gulp.task('build', compile);
-gulp.task('watch', watch);
-
+gulp.task('build', compiler());
+gulp.task('watch', watcher());
+gulp.task('watch:chrome', watcher('chromext.js'))
 gulp.task('default', ['watch']);
