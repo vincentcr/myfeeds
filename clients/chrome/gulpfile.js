@@ -1,4 +1,5 @@
 var path = require('path');
+var fs = require('fs');
 
 var gutil = require('gulp-util');
 var gulp = require('gulp');
@@ -9,14 +10,19 @@ var browserify = require('browserify');
 var watchify = require('watchify');
 var babel = require('babelify');
 
+if (null == process.env['NODE_ENV']) {
+  process.env['NODE_ENV'] = 'development';
+}
+
 var SRC_DIR      = './src'
 var ENTRY_POINT  = SRC_DIR + '/index.js';
 var OUT_DIR      = './assets';
 var JS_OUT       = OUT_DIR + '/index.js'
 var IS_PRODUCTION = 'production' === process.env['NODE_ENV'];
 
-
 function compile(watch) {
+  updateRuntimeConfig();
+
   var bundler = watchify(browserify(ENTRY_POINT, { debug: true }).transform(babel));
   if (IS_PRODUCTION) {
     bundler.plugin('minifyify', { output: OUT_DIR + '/map.json'  });
@@ -51,6 +57,14 @@ function compile(watch) {
   }
 
   return rebundle();
+}
+
+function updateRuntimeConfig() {
+  var configSrc = 'config.' + process.env['NODE_ENV'] + ".json";
+  var configDst = path.join(SRC_DIR, 'config.json');
+  var contents = fs.readFileSync(configSrc);
+  console.log('config file:', configSrc);
+  fs.writeFileSync(configDst, contents);
 }
 
 function errorHandler(stream) {

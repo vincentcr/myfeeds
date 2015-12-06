@@ -19,7 +19,6 @@ export default class FeedList extends React.Component {
   }
 
   componentDidMount() {
-    console.log('feed list, component did mount');
     const { dispatch } = this.props;
     dispatch(fetchFeedsIfNeeded());
   }

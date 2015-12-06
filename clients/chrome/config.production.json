@@ -1,0 +1,5 @@
+{
+  "api" : {
+    "baseUrl" : "http://api.myfeeds.polymatix.svc.tutum.io/api/v1"
+  }
+}

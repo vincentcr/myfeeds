@@ -2,14 +2,16 @@ import Session from './session';
 import history from './history';
 import uuid from 'node-uuid';
 import 'whatwg-fetch';
+import config from './config.json';
 
-// const API_BASE_URL = 'http://api.myfeeds.polymatix.svc.tutum.io/api/v1';
-const API_BASE_URL = 'http://192.168.99.100:3456/api/v1';
 const MIME_JSON = 'application/json';
 const DEFAULT_HEADERS = Object.freeze({
   'accept': MIME_JSON,
   'content-type': MIME_JSON,
 });
+
+const baseUrl = config.api.baseUrl;
+console.log('api:baseUrl:', baseUrl);
 
 export class Api {
 
@@ -39,7 +41,7 @@ export class Api {
 
   _normalizeUrl(url) {
     if(!/^https?:/.test(url)) {
-      return API_BASE_URL + url;
+      return baseUrl + url;
     } else {
       return url;
     }
