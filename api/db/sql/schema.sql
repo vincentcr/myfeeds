@@ -25,7 +25,7 @@ CREATE UNIQUE INDEX idx_feeds_owner_id_link ON feeds(owner_id, lower(link));
 
 CREATE TABLE feed_items(
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  feed_id uuid REFERENCES feeds(id) NOT NULL,
+  feed_id uuid REFERENCES feeds(id) ON DELETE CASCADE NOT NULL,
   owner_id uuid REFERENCES users(id) NOT NULL,
   date_added TIMESTAMP NOT NULL DEFAULT timeofday()::TIMESTAMP,
   date_modified TIMESTAMP NOT NULL DEFAULT timeofday()::TIMESTAMP,
