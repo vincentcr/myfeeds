@@ -45,20 +45,44 @@ type feedCacheHint struct {
 	id   RecordID
 }
 
+type formatQueryResults func(results []byte) []byte
+
+type query struct {
+	cacheHint feedCacheHint
+	format    formatQueryResults
+	sql       string
+}
+
 func (fs *Feeds) GetJson(user User, id RecordID) ([]byte, error) {
-	return fs.getCachedQuery(feedCacheHint{user, id}, "SELECT json FROM feed_json WHERE id=$1 and owner_id=$2", id, user.ID)
+	return fs.findOne(query{cacheHint: feedCacheHint{user, id}, sql: "SELECT json FROM feed_json WHERE id=$1 and owner_id=$2"}, id, user.ID)
 }
 
 func (fs *Feeds) GetRss(user User, id RecordID) ([]byte, error) {
-	return fs.getCachedQuery(feedCacheHint{user, id}, "SELECT xml FROM feeds_xml WHERE id=$1 and owner_id=$2", id, user.ID)
+	return fs.findOne(query{cacheHint: feedCacheHint{user, id}, sql: "SELECT xml FROM feeds_xml WHERE id=$1 and owner_id=$2"}, id, user.ID)
 }
 
 func (fs *Feeds) GetAllJson(user User) ([]byte, error) {
-	return fs.getCachedQuery(feedCacheHint{user: user}, "SELECT json FROM feeds_json WHERE owner_id=$1", user.ID)
+	format := func(results []byte) []byte {
+		if results == nil {
+			return []byte("[]")
+		} else {
+			return results
+		}
+	}
+	return fs.findMany(query{cacheHint: feedCacheHint{user: user}, format: format, sql: "SELECT json FROM feeds_json WHERE owner_id=$1"}, user.ID)
 }
 
-func (fs *Feeds) getCachedQuery(cacheHint feedCacheHint, query string, args ...interface{}) ([]byte, error) {
-	cacheKey := makeCacheKey(query, args)
+func (fs *Feeds) findOne(query query, args ...interface{}) ([]byte, error) {
+	res, err := fs.findMany(query, args...)
+	if res == nil && err == nil {
+		return nil, ErrNotFound
+	} else {
+		return res, err
+	}
+}
+
+func (fs *Feeds) findMany(query query, args ...interface{}) ([]byte, error) {
+	cacheKey := makeCacheKey(query.sql, args)
 	data, err := fs.getFromCache(cacheKey)
 	if err != nil {
 		return nil, err
@@ -70,7 +94,7 @@ func (fs *Feeds) getCachedQuery(cacheHint feedCacheHint, query string, args ...i
 		return nil, err
 	}
 
-	if err := fs.addToCache(cacheKey, data, 2*time.Hour, cacheHint); err != nil {
+	if err := fs.addToCache(cacheKey, data, 2*time.Hour, query.cacheHint); err != nil {
 		return nil, err
 	}
 	return data, err
@@ -111,15 +135,17 @@ func reverseMapCacheKey(cacheHint feedCacheHint) string {
 	return "feed_rkeys." + string(cacheHint.user.ID) + "." + string(cacheHint.id)
 }
 
-func (fs *Feeds) getFromDB(query string, args []interface{}) ([]byte, error) {
-	var results []byte
-	err := fs.db.QueryRow(query, args...).Scan(&results)
-	if err == sql.ErrNoRows {
-		return nil, ErrNotFound
-	} else if err != nil {
-		return nil, fmt.Errorf("Error fetching from db with query %v, args %v: %v", query, args, err)
+func (fs *Feeds) getFromDB(query query, args []interface{}) ([]byte, error) {
+	var rawResults []byte
+	err := fs.db.QueryRow(query.sql, args...).Scan(&rawResults)
+	if err == nil || err == sql.ErrNoRows {
+		if query.format != nil {
+			return query.format(rawResults), nil
+		} else {
+			return rawResults, nil
+		}
 	} else {
-		return results, nil
+		return nil, fmt.Errorf("Error fetching from db with query %v, args %v: %v", query, args, err)
 	}
 }
 
