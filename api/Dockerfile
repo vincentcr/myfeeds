@@ -1,15 +1,12 @@
 FROM golang:1.4
 
 RUN go get github.com/tools/godep
-ENV APP_DIR=$GOPATH/src/github.com/vincentcr/myfeeds/api
-
-RUN mkdir -p $APP_DIR
-WORKDIR $APP_DIR
-COPY . $APP_DIR
+ENV SRC_DIR=$GOPATH/src/github.com/vincentcr/myfeeds/api
+RUN mkdir -p /opt/app $SRC_DIR
+WORKDIR $SRC_DIR
+COPY . $SRC_DIR
 RUN godep go build -o app .
+RUN mv ./app /opt/app
 
-ENV PORT=3456
-
-EXPOSE ${PORT}
-
-CMD sh -c "sleep 1 && $APP_DIR/app :${PORT}"
+EXPOSE 3456
+CMD ["/opt/app/app", "-bind", ":3456"]
