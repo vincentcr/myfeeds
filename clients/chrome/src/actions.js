@@ -47,7 +47,6 @@ function shouldFetchFeeds(state) {
 function fetchFeeds (done) {
   return (dispatch) => {
     dispatch(asyncBegin());
-    setTimeout(() => {
     return Feeds.getAll()
       .then(feeds => { return {feeds}; })
       .catch(err => { return {err, feeds:[]}; })
@@ -55,7 +54,6 @@ function fetchFeeds (done) {
       .then(res => dispatch(asyncComplete(res)))
       .then(done)
       ;
-    }, 1000);
   };
 }
 
