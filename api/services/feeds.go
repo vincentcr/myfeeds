@@ -40,6 +40,11 @@ func newFeeds(config Config, db *sql.DB, redisClient *redis.Client) (*Feeds, err
 	return &Feeds{config, db, redisClient}, nil
 }
 
+type FeedData struct {
+	Bytes    []byte
+	CacheKey string
+}
+
 type feedCacheHint struct {
 	user User
 	id   RecordID
@@ -53,15 +58,15 @@ type query struct {
 	sql       string
 }
 
-func (fs *Feeds) GetJson(user User, id RecordID) ([]byte, error) {
+func (fs *Feeds) GetJson(user User, id RecordID) (FeedData, error) {
 	return fs.findOne(query{cacheHint: feedCacheHint{user, id}, sql: "SELECT json FROM feed_json WHERE id=$1 and owner_id=$2"}, id, user.ID)
 }
 
-func (fs *Feeds) GetRss(user User, id RecordID) ([]byte, error) {
+func (fs *Feeds) GetRss(user User, id RecordID) (FeedData, error) {
 	return fs.findOne(query{cacheHint: feedCacheHint{user, id}, sql: "SELECT xml FROM feeds_xml WHERE id=$1 and owner_id=$2"}, id, user.ID)
 }
 
-func (fs *Feeds) GetAllJson(user User) ([]byte, error) {
+func (fs *Feeds) GetAllJson(user User) (FeedData, error) {
 	format := func(results []byte) []byte {
 		if results == nil {
 			return []byte("[]")
@@ -72,32 +77,32 @@ func (fs *Feeds) GetAllJson(user User) ([]byte, error) {
 	return fs.findMany(query{cacheHint: feedCacheHint{user: user}, format: format, sql: "SELECT json FROM feeds_json WHERE owner_id=$1"}, user.ID)
 }
 
-func (fs *Feeds) findOne(query query, args ...interface{}) ([]byte, error) {
+func (fs *Feeds) findOne(query query, args ...interface{}) (FeedData, error) {
 	res, err := fs.findMany(query, args...)
-	if res == nil && err == nil {
-		return nil, ErrNotFound
+	if res.Bytes == nil && err == nil {
+		return FeedData{}, ErrNotFound
 	} else {
 		return res, err
 	}
 }
 
-func (fs *Feeds) findMany(query query, args ...interface{}) ([]byte, error) {
+func (fs *Feeds) findMany(query query, args ...interface{}) (FeedData, error) {
 	cacheKey := makeCacheKey(query.sql, args)
-	data, err := fs.getFromCache(cacheKey)
+	bytes, err := fs.getFromCache(cacheKey)
 	if err != nil {
-		return nil, err
-	} else if data != nil {
-		return data, nil
+		return FeedData{}, err
+	} else if bytes != nil {
+		return FeedData{bytes, cacheKey}, nil
 	}
-	data, err = fs.getFromDB(query, args)
+	bytes, err = fs.getFromDB(query, args)
 	if err != nil {
-		return nil, err
+		return FeedData{}, err
 	}
 
-	if err := fs.addToCache(cacheKey, data, 2*time.Hour, query.cacheHint); err != nil {
-		return nil, err
+	if err := fs.addToCache(cacheKey, bytes, 2*time.Hour, query.cacheHint); err != nil {
+		return FeedData{}, err
 	}
-	return data, err
+	return FeedData{bytes, cacheKey}, err
 }
 
 func makeCacheKey(query string, args []interface{}) string {

@@ -110,7 +110,7 @@ func routeFeeds(m *Mux) {
 		if err != nil {
 			panic(err)
 		}
-		writeAs(w, "application/json", feeds)
+		writeCacheable(r, w, "application/json", feeds)
 	}))
 
 	m.Get("/api/v1/feeds/:feedID", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
@@ -119,7 +119,7 @@ func routeFeeds(m *Mux) {
 		if err != nil {
 			panic(err)
 		}
-		writeAs(w, "application/json", feed)
+		writeCacheable(r, w, "application/json", feed)
 	}))
 
 	m.Get("/api/v1/feeds/:feedID/rss", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
@@ -128,7 +128,7 @@ func routeFeeds(m *Mux) {
 		if err != nil {
 			panic(err)
 		}
-		writeAs(w, "text/xml", rss)
+		writeCacheable(r, w, "text/xml", rss)
 	}))
 
 	m.Post("/api/v1/feeds", mustAuthenticate(func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
@@ -278,11 +278,22 @@ func jsonify(result interface{}, w http.ResponseWriter) {
 	writeAs(w, "application/json", bytes)
 }
 
+func writeCacheable(r *http.Request, w http.ResponseWriter, contentType string, cacheable services.FeedData) {
+	w.Header().Set("ETag", cacheable.CacheKey)
+	w.Header().Set("Cache-Control", "public")
+
+	reqCacheKey := r.Header.Get("If-None-Match")
+	if cacheable.CacheKey == reqCacheKey {
+		w.WriteHeader(304)
+	} else {
+		writeAs(w, contentType, cacheable.Bytes)
+	}
+}
+
 func writeAs(w http.ResponseWriter, contentType string, bytes []byte) {
 	w.Header().Set("content-type", contentType)
 	_, err := w.Write(bytes)
 	if err != nil {
 		panic(err)
 	}
-
 }
