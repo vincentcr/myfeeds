@@ -69,7 +69,9 @@ func authenticate(c *MyFeedsContext, w http.ResponseWriter, r *http.Request, nex
 		panic(err)
 	} else if method != AuthMethodNone {
 		user, access, err := verifyCredentials(c, method, creds)
-		if err != nil {
+		if err == services.ErrNotFound {
+			panic(NewHttpErrorWithText(http.StatusUnauthorized, "Invalid Credentials"))
+		} else if err != nil {
 			panic(err)
 		} else {
 			log.Printf("authenticated as %v", user)
