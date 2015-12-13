@@ -144,7 +144,7 @@ func routeFeeds(m *Mux) {
 			panic(err)
 		}
 
-		err = c.Services.Feeds.Create(user, token.Secret, &feed)
+		err = c.Services.Feeds.Create(user, token, &feed)
 		if err != nil {
 			panic(err)
 		}

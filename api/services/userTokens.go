@@ -42,21 +42,21 @@ type tokenOptions struct {
 	secretSize int
 }
 
-func (users *Users) CreateTokenRW(user User) (Token, error) {
+func (users *Users) CreateTokenRW(user User) (string, error) {
 	return users.CreateToken(user, AccessReadWrite)
 }
 
-func (users *Users) CreateToken(user User, access Access) (Token, error) {
+func (users *Users) CreateToken(user User, access Access) (string, error) {
 	duration := maxDuration
 
 	token, err := tokenDbCreate(users.db, user, access, duration)
 	if err != nil {
-		return token, err
+		return "", err
 	}
 
 	err = tokenAddToCache(users.redis, user, token)
 
-	return token, nil
+	return token.Secret, nil
 }
 
 func tokenDbCreate(db *sql.DB, user User, access Access, duration time.Duration) (Token, error) {
