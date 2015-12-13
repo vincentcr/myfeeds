@@ -1,5 +1,4 @@
 import React from 'react';
-import {Users} from '../api';
 import history from '../history';
 
 const SUCCESS_REDIRECT_PATH = '/';
@@ -14,10 +13,10 @@ export default class Signin extends React.Component {
 
   handleSubmit(e) {
     e.preventDefault();
-
+    const {api} = this.props;
     const {email, password} = this.state;
     const method = document.activeElement.name || 'signin';
-    Users[method]({email, password}).then(() => {
+    api.Users[method]({email, password}).then(() => {
       const {location} = this.props;
       const redirectPath = (location.state && location.state.next) ? location.state.next : SUCCESS_REDIRECT_PATH;
       history.replaceState(null, redirectPath);

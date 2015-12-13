@@ -2,7 +2,7 @@ import React, {PropTypes} from 'react';
 import { connect } from 'react-redux';
 
 @connect(state => state.asyncState)
-export default class App extends React.Component {
+export default class Index extends React.Component {
 
   static propTypes = {
     children: PropTypes.any,

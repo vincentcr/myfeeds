@@ -3,7 +3,6 @@ import { Link } from 'react-router';
 import { connect } from 'react-redux';
 import { fetchFeedsIfNeeded, createFeed } from '../actions';
 import Session from '../session';
-import { Users } from '../api';
 import Home from './home.jsx';
 
 @connect(state => state.feedList)
@@ -146,7 +145,8 @@ export default class FeedList extends React.Component {
   }
 
   handleSignout() {
-    Users.signout();
+    const {api} = this.props;
+    api.Users.signout();
   }
 
   handleCreateFeed(e) {

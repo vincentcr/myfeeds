@@ -2,7 +2,6 @@
 import React, {PropTypes} from 'react';
 import { Link } from 'react-router';
 import { saveFeedItem } from '../actions';
-import {Feeds} from '../api';
 
 
 export default class Home extends React.Component {
@@ -128,10 +127,9 @@ export default class Home extends React.Component {
   }
 
   renderSummaryFeed({idx, feed}) {
-    const rssUrl = Feeds.rssUrl(feed.id);
     function onCopy(e) {
       e.preventDefault();
-      copyTextToClipboard(rssUrl);
+      copyTextToClipboard(feed.link);
     }
     return (
       <tr key={feed.id}>

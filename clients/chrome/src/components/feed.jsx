@@ -87,6 +87,11 @@ export default class Feed extends React.Component {
             <span className="glyphicon glyphicon-cog" aria-hidden="true"></span>
           </button>
           <ul className="dropdown-menu" aria-labelledby="dropdownMenu1">
+            <li><a href={feed.link} target={'rss' + feed.id}>
+                <span className='glyphicon glyphicon-th-list' aria-hidden="true"></span>
+                {' '}
+                view rss
+            </a></li>
             <li><a href="#" onClick={e => this.handleDelete(e)}>
                 <span className='glyphicon glyphicon-trash' aria-hidden="true"></span>
                 {' '}

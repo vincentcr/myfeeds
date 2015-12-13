@@ -1,5 +1,4 @@
 import history from './history';
-import {Feeds} from './api';
 import {
   ASYNC_BEGIN,
   ASYNC_COMPLETE,
@@ -13,6 +12,11 @@ import {
   FEED_UPDATE,
   FEED_ITEM_DELETE,
 } from './stores';
+
+let api = null;
+export function setApi(newApi) {
+  api = newApi;
+}
 
 function asyncBegin() {
   return { type:ASYNC_BEGIN };
@@ -47,7 +51,7 @@ function shouldFetchFeeds(state) {
 function fetchFeeds (done) {
   return (dispatch) => {
     dispatch(asyncBegin());
-    return Feeds.getAll()
+    return api.Feeds.getAll()
       .then(feeds => { return {feeds}; })
       .catch(err => { return {err, feeds:[]}; })
       .then(res => dispatch(completeFetchFeeds(res)))
@@ -77,7 +81,8 @@ export function fetchCurrentFeedIfNeeded(feedID) {
 
 export function createFeed(title) {
   return (dispatch) => {
-    return Feeds.create(title).then((feed) => {
+    return api.Feeds.create(title).then((feed) => {
+      console.log('feed created:', feed);
       dispatch({type:FEED_CREATE, feed});
       dispatch({type:FEEDS_UPDATE, feed});
       history.replaceState(null, `/feeds/${feed.id}`);
@@ -90,7 +95,7 @@ export function deleteFeed(feed) {
     const {feeds} = getState().feedList;
     const adjFeed = findAdjacentFeed({feed, feeds});
 
-    return Feeds.delete(feed).then(() => {
+    return api.Feeds.delete(feed).then(() => {
       dispatch({type:FEEDS_DELETE, feed});
       if (adjFeed != null) {
         dispatch(selectFeed(adjFeed));
@@ -119,7 +124,7 @@ export function saveFeed(feed) {
     const origFeed = getState().feed.feed;
     updateFeed({dispatch, feed});
     dispatch(asyncBegin());
-    return Feeds.save(feed)
+    return api.Feeds.save(feed)
       .catch(err => {
         console.log('error', err);
         updateFeed({dispatch, feed:origFeed});
@@ -138,7 +143,7 @@ export function saveFeedItem(feed, item, done = () => null) {
   return (dispatch) => {
     const origItem = feed.items.find(i => i.id === item.id);
     dispatch(asyncBegin());
-    return Feeds.saveItem({feedID:feed.id, item})
+    return api.Feeds.saveItem({feedID:feed.id, item})
       .then(item => {
         updateFeedItem({dispatch, feed, item});
         return item;
@@ -165,7 +170,7 @@ function updateFeedItem({dispatch, feed, item}) {
 
 export function deleteFeedItem(feed, item) {
   return (dispatch) => {
-    return Feeds.deleteItem({feed, item}).then(() => {
+    return api.Feeds.deleteItem({feed, item}).then(() => {
       dispatch({type:FEED_ITEM_DELETE, feed, item});
       history.replaceState(null, `/feeds/${feed.id}`);
     });

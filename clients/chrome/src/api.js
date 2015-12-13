@@ -98,19 +98,22 @@ export class Api {
       })
       .catch((err) => {
         if (err.status === 401) {
-          if (Users.isSignedIn()) {
+          if (Session.isSignedIn()) {
             console.log('invalid token, signout');
             Users.signout();
           }
         }
         console.log('request failed', err, {url, opts});
         throw err;
-      });
+      })
+      ;
   }
+
 }
 
 Api.create = function(routes) {
-  routes._api = new Api();
+  const api = new Api();
+  routes._api = api;
   return routes;
 };
 
@@ -144,10 +147,6 @@ export const Users = Api.create({
     ;
   },
 
-  isSignedIn() {
-    return Session.get('token') != null;
-  },
-
   signout() {
     const token = Session.get('token');
     function finalize() {
@@ -166,11 +165,6 @@ export const Users = Api.create({
 
 export const Feeds = Api.create({
 
-  rssUrl(feedID) {
-    const token = Session.get('token'); //TODO: server should provide readonly tokens for this
-    return `${baseUrl}/feeds/${feedID}/rss?_auth_token=${token}`;
-  },
-
   getAll() {
     return this._api.get('/feeds').then(res => res.json());
   },
@@ -181,7 +175,7 @@ export const Feeds = Api.create({
 
   create(title) {
     const feed = {title, id:uuidgen(), items:[]};
-    return this._api.post('/feeds', {data:feed}).then(() => feed);
+    return this._api.post('/feeds', {data:feed}).then(res => res.json());
   },
 
   save(feed) {
@@ -193,6 +187,7 @@ export const Feeds = Api.create({
   },
 
   saveItem({feedID, item}) {
+    console.log("Api.Feeds.saveItem", {feedID, item})
     let url, method;
     if (item.id == null) {
       method = 'POST';

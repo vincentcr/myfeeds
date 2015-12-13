@@ -95,5 +95,7 @@ function watcher(entryPoint) {
 
 gulp.task('build', compiler());
 gulp.task('watch', watcher());
-gulp.task('watch:chrome', watcher('chromext.js'))
-gulp.task('default', ['watch']);
+gulp.task('watch:chromebg', watcher('chromebg.js'))
+gulp.task('watch:chromeapp', watcher('chromeapp.js'))
+gulp.task('watch:chrome',['watch:chromebg', 'watch:chromeapp'])
+gulp.task('default', ['watch', 'watch:chrome']);

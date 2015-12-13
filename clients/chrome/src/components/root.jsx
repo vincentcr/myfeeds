@@ -4,9 +4,10 @@ import { Redirect, Router, Route, IndexRoute } from 'react-router';
 import history from '../history';
 import { Provider } from 'react-redux';
 import configureStore from '../stores';
+import {setApi} from '../actions';
+import Session from '../session';
 
-import {Users} from '../api';
-import App from './app.jsx';
+import Index from './index.jsx';
 import Signin from './signin.jsx';
 import FeedList from './feeds.jsx';
 import FeedItem from './feedItem.jsx';
@@ -16,12 +17,13 @@ const ANONYMOUS_ROUTES = ['/signin', '/signup'];
 
 export default class Root {
 
-  static create(rootNode) {
+  static create({api, rootNode}) {
     const store = configureStore();
+    setApi(api);
 
     render(
       <Provider store={store}>
-        <Routes />
+        <Routes api={api}/>
       </Provider>,
       rootNode
     );
@@ -30,9 +32,14 @@ export default class Root {
 
 class Routes extends React.Component {
   render() {
+    const {api} = this.props;
+    function createElement(Component, props) {
+      return <Component {...props} api={api} />;
+    }
+
     return (
-      <Router history={history}>
-        <Route path='/' component={App} onEnter={this.checkAccess}>
+      <Router history={history} createElement={createElement}>
+        <Route path='/' component={Index} onEnter={this.checkAccess}>
           <IndexRoute component={FeedList} />
           <Route path='signin' name='signin' onEnter={this.checkAccess} component={Signin}/>
           <Route path='feeds' name='feeds'  onEnter={this.checkAccess} component={FeedList}>
@@ -50,7 +57,7 @@ class Routes extends React.Component {
   checkAccess(nextState, replaceState) {
     const path = nextState.location.pathname.replace(/^(.+?)(\?.+)$/, '$1'); //remove query from path
     const isAnonymousRoute = ANONYMOUS_ROUTES.indexOf(path) >= 0;
-    const isSignedIn = Users.isSignedIn();
+    const isSignedIn = Session.isSignedIn();
 
     let redirect;
     if (!isSignedIn && !isAnonymousRoute) {

@@ -13,6 +13,10 @@ export class Session {
     }
   }
 
+  isSignedIn() {
+    return this.get('token') != null;    
+  }
+
   get(key) {
     return this._data[key];
   }
