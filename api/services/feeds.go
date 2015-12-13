@@ -186,6 +186,8 @@ func (fs *Feeds) Create(user User, token string, feed *Feed) error {
 		feed.ID = newID()
 	}
 
+	if feed.Items == nil {
+		feed.Items = []FeedItem{}
 	}
 
 	feed.Link = makeFeedURL(fs.config, feed, token)
