@@ -287,11 +287,11 @@ func jsonify(result interface{}, w http.ResponseWriter) {
 }
 
 func writeCacheable(r *http.Request, w http.ResponseWriter, contentType string, cacheable services.FeedData) {
-	w.Header().Set("ETag", cacheable.CacheKey)
+	w.Header().Set("ETag", cacheable.ETag)
 	w.Header().Set("Cache-Control", "public")
 
-	reqCacheKey := r.Header.Get("If-None-Match")
-	if cacheable.CacheKey == reqCacheKey {
+	reqEtag := r.Header.Get("If-None-Match")
+	if cacheable.ETag == reqEtag {
 		w.WriteHeader(304)
 	} else {
 		writeAs(w, contentType, cacheable.Bytes)

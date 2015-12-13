@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/OneOfOne/xxhash"
+	"github.com/satori/go.uuid"
 
 	"gopkg.in/redis.v3"
 )
@@ -45,8 +46,8 @@ func newFeeds(config Config, db *sql.DB, redisClient *redis.Client) (*Feeds, err
 }
 
 type FeedData struct {
-	Bytes    []byte
-	CacheKey string
+	Bytes []byte
+	ETag  string
 }
 
 type feedCacheHint struct {
@@ -92,21 +93,28 @@ func (fs *Feeds) findOne(query query, args ...interface{}) (FeedData, error) {
 
 func (fs *Feeds) findMany(query query, args ...interface{}) (FeedData, error) {
 	cacheKey := makeCacheKey(query.sql, args)
-	bytes, err := fs.getFromCache(cacheKey)
+	bytes, etag, err := fs.getFromCache(cacheKey)
 	if err != nil {
 		return FeedData{}, err
 	} else if bytes != nil {
-		return FeedData{bytes, cacheKey}, nil
+		return FeedData{bytes, etag}, nil
 	}
 	bytes, err = fs.getFromDB(query, args)
 	if err != nil {
 		return FeedData{}, err
 	}
 
-	if err := fs.addToCache(cacheKey, bytes, 2*time.Hour, query.cacheHint); err != nil {
+	etag = makeEtag()
+
+	if err := fs.addToCache(cacheKey, bytes, etag, 2*time.Hour, query.cacheHint); err != nil {
 		return FeedData{}, err
 	}
-	return FeedData{bytes, cacheKey}, err
+
+	return FeedData{bytes, etag}, err
+}
+
+func makeEtag() string {
+	return uuid.NewV4().String()
 }
 
 func makeCacheKey(query string, args []interface{}) string {
@@ -119,20 +127,23 @@ func makeCacheKey(query string, args []interface{}) string {
 	return fmt.Sprintf("query.%v", h.Sum64())
 }
 
-func (fs *Feeds) getFromCache(cacheKey string) ([]byte, error) {
-	json, err := fs.redis.Get(cacheKey).Result()
-	if err == redis.Nil {
-		return nil, nil
+func (fs *Feeds) getFromCache(cacheKey string) ([]byte, string, error) {
+	hash, err := fs.redis.HMGet(cacheKey, "data", "etag").Result()
+	if err == redis.Nil || hash[0] == nil {
+		return nil, "", nil
 	} else if err != nil {
-		return nil, fmt.Errorf("error fetching feed from cache with key %v: %v", cacheKey, err)
+		return nil, "", fmt.Errorf("error fetching feed from cache with key %v: %v", cacheKey, err)
 	} else {
-		return []byte(json), nil
+		data := hash[0].(string)
+		etag := hash[1].(string)
+		return []byte(data), etag, nil
 	}
 }
 
-func (fs *Feeds) addToCache(cacheKey string, data []byte, expiration time.Duration, cacheHint feedCacheHint) error {
+func (fs *Feeds) addToCache(cacheKey string, data []byte, etag string, expiration time.Duration, cacheHint feedCacheHint) error {
 	_, err := fs.redis.Pipelined(func(pipe *redis.Pipeline) error {
-		pipe.SetNX(cacheKey, string(data), expiration)
+		pipe.HMSet(cacheKey, "data", string(data), "etag", etag)
+		pipe.Expire(cacheKey, expiration)
 		rkey := reverseMapCacheKey(cacheHint)
 		pipe.SAdd(rkey, cacheKey)
 		return nil
