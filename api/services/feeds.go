@@ -186,14 +186,9 @@ func (fs *Feeds) Create(user User, token string, feed *Feed) error {
 		feed.ID = newID()
 	}
 
-	longUrl := fs.config.PublicURL + "/feeds/" + string(feed.ID) + "/rss?_tok=" + token
-	shortUrl, err := shortenUrl(fs.config, longUrl)
-	if err != nil { // fallback to long url
-		log.Println(err)
-		feed.Link = longUrl
-	} else {
-		feed.Link = shortUrl
 	}
+
+	feed.Link = makeFeedURL(fs.config, feed, token)
 	feed.ownerID = user.ID
 
 	tx, err := fs.db.Begin()
@@ -220,6 +215,18 @@ func (fs *Feeds) Create(user User, token string, feed *Feed) error {
 	fs.invalidateFeedCache(feedCacheHint{user, feed.ID})
 
 	return tx.Commit()
+}
+
+func makeFeedURL(config Config, feed *Feed, token string) string {
+	longUrl := config.PublicURL + "/feeds/" + string(feed.ID) + "/rss?_tok=" + token
+	shortUrl, err := shortenUrl(config, longUrl)
+	if err != nil { // fallback to long url
+		log.Println(err)
+		return longUrl
+	} else {
+		return shortUrl
+	}
+
 }
 
 func (fs *Feeds) Delete(user User, feedID RecordID) error {
