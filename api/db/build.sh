@@ -1,9 +1,12 @@
 : ${ENV:="dev"}
 : ${APP_NAME:="myfeeds"}
-: ${DB_HOST:="localhost"}
 : ${DB_NAME:="${APP_NAME}_${ENV}"}
 : ${DB_USER:="${APP_NAME}_${ENV}"}
 : ${DB_PASSWD:="${APP_NAME}_${ENV}_secret"}
+
+if [ -n "${DB_HOST}" ]; then
+	HOST_ARG="-h ${DB_HOST}"
+fi
 
 SQL_DIR='./sql'
 
@@ -28,9 +31,6 @@ function main {
     ;;
     *)
     create
-		if [ "${ENV}" == "dev" ] ; then
-			dev_data
-		fi
     ;;
 	esac
 }
@@ -49,13 +49,16 @@ function schema() {
 }
 
 function create() {
-	run_cmd "${PSQL_CMD} -U postgres --set=dbuser=${DB_USER} --set=dbpasswd=${DB_PASSWD} --set=dbname=${DB_NAME} -f ${SQL_DIR}/db.sql"
+	run_su_sql " --set=dbuser=${DB_USER} --set=dbpasswd=${DB_PASSWD} --set=dbname=${DB_NAME} -f ${SQL_DIR}/db.sql"
 	schema
+	if [ "${ENV}" == "dev" ] ; then
+		dev_data
+	fi
 }
 
 function drop() {
-	run_cmd "dropdb ${DB_NAME}"
-	run_cmd "dropuser ${DB_USER}"
+	run_su_sql "-c 'DROP DATABASE ${DB_NAME}'"
+	run_su_sql "-c 'DROP USER ${DB_USER}'"
 }
 
 function recreate() {
@@ -64,7 +67,11 @@ function recreate() {
 }
 
 function run_sql {
-	run_cmd "${PSQL_CMD} -d ${DB_NAME} -U ${DB_USER} -f $@"
+	PGPASSWORD=${DB_PASSWD} run_cmd "${PSQL_CMD} ${HOST_ARG} -d ${DB_NAME} -U ${DB_USER} -f $@"
+}
+
+function run_su_sql {
+	PGPASSWORD=${POSTGRES_PASSWORD} run_cmd "${PSQL_CMD} ${HOST_ARG} -U postgres $@"
 }
 
 function run_cmd {

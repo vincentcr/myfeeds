@@ -19,7 +19,8 @@ postgres:
   ports:
   - "5432:5432"
   environment:
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ENV: dev
     DB_NAME: 'myfeeds_dev'
     DB_USER: 'myfeeds_dev'
-    DB_PASSWD: 'kWd2XdJUhGPRo3XlxUcvYJAebCZvbieM'
+    DB_PASSWD: 'changeme' # change this in prod
