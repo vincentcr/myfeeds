@@ -3,8 +3,12 @@ package services
 import (
 	"bytes"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/OneOfOne/xxhash"
@@ -63,7 +67,7 @@ func (fs *Feeds) GetJson(user User, id RecordID) (FeedData, error) {
 }
 
 func (fs *Feeds) GetRss(user User, id RecordID) (FeedData, error) {
-	return fs.findOne(query{cacheHint: feedCacheHint{user, id}, sql: "SELECT xml FROM feeds_xml WHERE id=$1 and owner_id=$2"}, id, user.ID)
+	return fs.findOne(query{cacheHint: feedCacheHint{user, id}, sql: "SELECT feed_xml($1,$2)"}, id, user.ID)
 }
 
 func (fs *Feeds) GetAllJson(user User) (FeedData, error) {
@@ -170,7 +174,6 @@ func (fs *Feeds) invalidateFeedCache(cacheHint feedCacheHint) error {
 	`
 	ret, err := fs.redis.Eval(script, rkeys, nil).Result()
 	if err != nil {
-		log.Printf("failed redis clear cache with rkeys=%v, script=%v", rkeys, script)
 		return fmt.Errorf("failed to delete cached keys in %v: %v", rkeys, err)
 	} else {
 		log.Printf("invalidated %v cache entries for %v", ret, cacheHint)
@@ -178,11 +181,19 @@ func (fs *Feeds) invalidateFeedCache(cacheHint feedCacheHint) error {
 	return nil
 }
 
-func (fs *Feeds) Create(user User, feed *Feed) error {
+func (fs *Feeds) Create(user User, token string, feed *Feed) error {
 	if feed.ID == "" {
 		feed.ID = newID()
 	}
-	feed.Link = fs.config.PublicURL + "/feeds/" + string(feed.ID)
+
+	longUrl := fs.config.PublicURL + "/feeds/" + string(feed.ID) + "/rss?_tok=" + token
+	shortUrl, err := shortenUrl(fs.config, longUrl)
+	if err != nil { // fallback to long url
+		log.Println(err)
+		feed.Link = longUrl
+	} else {
+		feed.Link = shortUrl
+	}
 	feed.ownerID = user.ID
 
 	tx, err := fs.db.Begin()
@@ -342,6 +353,38 @@ func checkRowsAffected(res sql.Result, expected int64) error {
 		return fmt.Errorf("Unexpected result: expected %v, got %v", expected, actual)
 	}
 	return nil
+}
+
+func shortenUrl(config Config, longUrl string) (string, error) {
+
+	url := fmt.Sprintf("https://api-ssl.bitly.com/v3/user/link_save?access_token=%s&longUrl=%s", config.BitlyAPIKey, url.QueryEscape(longUrl))
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", fmt.Errorf("shortenUrl: failed to exec request %v: %v", url, err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("shortenUrl: failed to read request response to %v: %v", url, err)
+	}
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("shortenUrl: request %v returned %v status, body %s", url, resp.StatusCode, string(body))
+	}
+
+	var shortenerRes struct {
+		Data struct{ Link_Save struct{ Link string } }
+	}
+	err = json.Unmarshal(body, &shortenerRes)
+	if err != nil {
+		return "", fmt.Errorf("shortenUrl: request %v returned unparsable body %v: %v", url, string(body), err)
+	}
+
+	shortUrl := shortenerRes.Data.Link_Save.Link
+	if shortUrl == "" {
+		return "", fmt.Errorf("shortenUrl: request %v returned unexpected body %v: parsed: %#v", url, string(body), shortenerRes)
+	}
+
+	return shortUrl, nil
 }
 
 func trace(label string) (string, time.Time) {

@@ -7,7 +7,8 @@ api:
   - postgres
   environment: &environment
     ENV: dev
-    API_PUBLIC_URL: "192.168.99.100"
+    API_PUBLIC_URL: "http://192.168.99.100:3456/api/v1"
+    BITLY_API_KEY: "c7399c2f47f02017fb3f02f46f10ce1099317d8a"
 redis:
   image: redis:3.0
   ports:

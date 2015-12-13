@@ -6,10 +6,10 @@ import (
 )
 
 type Config struct {
-	PublicURL    string
-	Postgres     PGConfig
-	PostgresAddr string
-	RedisAddr    string
+	PublicURL   string
+	BitlyAPIKey string
+	Postgres    PGConfig
+	RedisAddr   string
 }
 type PGConfig struct {
 	Addr     string
@@ -20,14 +20,15 @@ type PGConfig struct {
 
 func loadConfig() (Config, error) {
 	config, err := loadConfigFromEnv()
-	log.Println("using config", config)
+	log.Printf("using config: %#v", config)
 	return config, err
 }
 
 func loadConfigFromEnv() (Config, error) {
 	return Config{
-		PublicURL: os.Getenv("API_PUBLIC_URL"),
-		RedisAddr: "redis:6379",
+		PublicURL:   os.Getenv("API_PUBLIC_URL"),
+		BitlyAPIKey: os.Getenv("BITLY_API_KEY"),
+		RedisAddr:   "redis:6379",
 		Postgres: PGConfig{
 			Addr:     "postgres:5432",
 			Database: os.Getenv("POSTGRES_ENV_DB_NAME"),

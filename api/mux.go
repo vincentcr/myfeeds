@@ -16,24 +16,6 @@ type MyFeedsContext struct {
 	Services *services.Services
 }
 
-func (c *MyFeedsContext) GetUser() (services.User, bool) {
-	val, ok := c.Env["user"]
-	var user services.User
-	if ok {
-		user = val.(services.User)
-	}
-
-	return user, ok
-}
-
-func (c *MyFeedsContext) MustGetUser() services.User {
-	user, ok := c.GetUser()
-	if !ok {
-		panic("no user but must get user")
-	}
-	return user
-}
-
 type NextFunc func()
 type AbortReason struct {
 	StatusCode int
@@ -57,7 +39,6 @@ func (mux *Mux) Use(m middleware) {
 
 		handlerFn := func(w http.ResponseWriter, r *http.Request) {
 			sc := &MyFeedsContext{*c, mux.svc}
-			c.Env["foo"] = 1
 			next := func() {
 				h.ServeHTTP(w, r)
 			}

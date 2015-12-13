@@ -9,6 +9,15 @@ CREATE TABLE users(
 
 CREATE UNIQUE INDEX idx_users_email ON users(lower(email));
 
+CREATE TABLE access_tokens(
+  secret VARCHAR(256) PRIMARY KEY,
+  user_id uuid REFERENCES users(id) NOT NULL,
+  expires TIMESTAMP,
+  access INT NOT NULL
+);
+CREATE INDEX idx_access_tokens_user_id ON access_tokens(user_id);
+CREATE INDEX idx_access_tokens_expires ON access_tokens(expires) WHERE expires IS NOT NULL; -- index to use for deleting expired tokenss
+
 CREATE TABLE feeds(
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   owner_id uuid REFERENCES users(id) NOT NULL,

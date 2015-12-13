@@ -24,9 +24,8 @@ CREATE OR REPLACE VIEW feeds_json AS
   ) AS feeds GROUP BY owner_id
 ;
 
-CREATE OR REPLACE VIEW feeds_xml AS
+CREATE OR REPLACE FUNCTION feed_xml(uuid, uuid) RETURNS xml AS $$
   SELECT
-    id, owner_id,
     xmlelement(name "rss",
       xmlattributes('2.0' as "version"),
       xmlelement(name "channel",
@@ -48,5 +47,10 @@ CREATE OR REPLACE VIEW feeds_xml AS
         )
       )
     ) as xml
-  FROM feeds
+  FROM feeds WHERE feeds.id=$1 AND feeds.owner_id=$2 
+$$ LANGUAGE SQL;
+
+CREATE OR REPLACE FUNCTION access_token_is_valid(TEXT, access_tokens) RETURNS BOOLEAN AS $$
+  SELECT $2.secret = $1 AND ($2.expires IS NULL OR $2.expires > NOW())
+$$ IMMUTABLE LANGUAGE SQL
 ;

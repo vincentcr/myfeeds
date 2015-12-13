@@ -11,12 +11,44 @@ import (
 	"github.com/vincentcr/myfeeds/api/services"
 )
 
-func mustAuthenticate(h handler) handler {
+func (c *MyFeedsContext) GetUser() (services.User, bool) {
+	val, ok := c.Env["user"]
+	var user services.User
+	if ok {
+		user = val.(services.User)
+	}
+
+	return user, ok
+}
+
+func (c *MyFeedsContext) MustGetUser() services.User {
+	user, ok := c.GetUser()
+	if !ok {
+		panic("no user but must get user")
+	}
+	return user
+}
+
+func (c *MyFeedsContext) GetUserAccess() services.Access {
+	access, ok := c.Env["userAccess"]
+	if !ok {
+		panic("no access present in context env")
+	}
+	return access.(services.Access)
+}
+
+func mustAuthenticateRW(h handler) handler {
+	return mustAuthenticate(services.AccessReadWrite, h)
+}
+
+func mustAuthenticate(access services.Access, h handler) handler {
 	return func(c *MyFeedsContext, w http.ResponseWriter, r *http.Request) {
 		_, ok := c.GetUser()
 		if !ok {
 			w.Header().Set("WWW-Authenticate", "Basic realm=\"my rss feeds\"")
 			panic(NewHttpError(http.StatusUnauthorized))
+		} else if (access & c.GetUserAccess()) == 0 {
+			panic(NewHttpError(http.StatusForbidden))
 		}
 		h(c, w, r)
 	}
@@ -32,55 +64,21 @@ var (
 )
 
 func authenticate(c *MyFeedsContext, w http.ResponseWriter, r *http.Request, next NextFunc) {
-
-	verify := func(method AuthMethod, creds AuthCreds) (services.User, error) {
-		switch method {
-		case AuthMethodBasic:
-			username := creds[0]
-			password := creds[1]
-			return c.Services.Users.AuthenticateWithPassword(username, password)
-		case AuthMethodToken:
-			token := creds[0]
-			return c.Services.Users.AuthenticateWithToken(token)
-		default:
-			return services.User{}, fmt.Errorf("Unknown auth method %v", method)
+	method, creds, err := parseAuthorizationFromRequest(r)
+	if err != nil {
+		panic(err)
+	} else if method != AuthMethodNone {
+		user, access, err := verifyCredentials(c, method, creds)
+		if err != nil {
+			panic(err)
+		} else {
+			log.Printf("authenticated as %v", user)
+			c.Env["user"] = user
+			c.Env["userAccess"] = access
 		}
 	}
 
-	user, err := authenticateRequest(verify, w, r)
-	if err == nil {
-		c.Env["user"] = user
-		log.Printf("authenticated as %v", user)
-	} else if err != services.ErrNotFound {
-		panic(err)
-	}
-
 	next()
-}
-
-type authVerification func(method AuthMethod, creds AuthCreds) (services.User, error)
-
-func authenticateRequest(verify authVerification, w http.ResponseWriter, r *http.Request) (services.User, error) {
-
-	method, creds, err := parseAuthorizationFromRequest(r)
-
-	if method == AuthMethodNone {
-		return services.User{}, services.ErrNotFound
-	}
-
-	if err != nil {
-		return services.User{}, NewHttpErrorWithText(http.StatusBadRequest, err.Error())
-	}
-
-	user, err := verify(method, creds)
-	if err == services.ErrNotFound {
-		return services.User{}, NewHttpErrorWithText(http.StatusUnauthorized, "Invalid Credentials")
-	} else if err != nil {
-		return services.User{}, err
-	} else {
-		return user, nil
-	}
-
 }
 
 type credentialParser func(r *http.Request) (AuthMethod, AuthCreds, error)
@@ -98,6 +96,22 @@ func parseAuthorizationFromRequest(r *http.Request) (AuthMethod, AuthCreds, erro
 	return AuthMethodNone, nil, nil
 }
 
+func verifyCredentials(c *MyFeedsContext, method AuthMethod, creds AuthCreds) (services.User, services.Access, error) {
+	switch method {
+	case AuthMethodBasic:
+		username := creds[0]
+		password := creds[1]
+		user, err := c.Services.Users.AuthenticateWithPassword(username, password)
+		return user, services.AccessReadWrite, err
+	case AuthMethodToken:
+		token := creds[0]
+		return c.Services.Users.AuthenticateWithToken(token)
+	default:
+		return services.User{}, services.AccessNone, NewHttpErrorWithText(http.StatusBadRequest, fmt.Sprintf("Unknown auth method %s", method))
+	}
+
+}
+
 func parseAuthorizationFromHeader(r *http.Request) (AuthMethod, AuthCreds, error) {
 	header := r.Header.Get("Authorization")
 	if header == "" {
@@ -106,7 +120,7 @@ func parseAuthorizationFromHeader(r *http.Request) (AuthMethod, AuthCreds, error
 
 	match := regexp.MustCompile("^(.+?)\\s+(.+)$").FindStringSubmatch(header)
 	if len(match) == 0 {
-		return "", nil, fmt.Errorf("Invalid auth header")
+		return "", nil, NewHttpErrorWithText(http.StatusBadRequest, "Invalid auth header")
 	}
 
 	method := AuthMethod(match[1])
@@ -116,7 +130,7 @@ func parseAuthorizationFromHeader(r *http.Request) (AuthMethod, AuthCreds, error
 	if method == AuthMethodBasic {
 		userPasswordStr, err := base64.StdEncoding.DecodeString(encodedCreds)
 		if err != nil {
-			return "", nil, fmt.Errorf("Invalid basic auth header: not base64")
+			return "", nil, NewHttpErrorWithText(http.StatusBadRequest, "Invalid basic auth header: not base64")
 		}
 
 		creds = strings.Split(string(userPasswordStr), ":")
@@ -124,7 +138,7 @@ func parseAuthorizationFromHeader(r *http.Request) (AuthMethod, AuthCreds, error
 	} else if method == AuthMethodToken {
 		tokenSecretMatch := regexp.MustCompile("token=\"(.+?)\".*").FindStringSubmatch(encodedCreds)
 		if len(tokenSecretMatch) == 0 {
-			return "", nil, fmt.Errorf("Invalid auth token header")
+			return "", nil, NewHttpErrorWithText(http.StatusBadRequest, "Invalid auth token header")
 		}
 
 		creds = tokenSecretMatch[1:2]
@@ -134,7 +148,7 @@ func parseAuthorizationFromHeader(r *http.Request) (AuthMethod, AuthCreds, error
 }
 
 func parseAuthorizationFromForm(r *http.Request) (AuthMethod, AuthCreds, error) {
-	token := r.FormValue("_auth_token")
+	token := r.FormValue("_tok")
 	if token != "" {
 		return AuthMethodToken, []string{token}, nil
 	}
